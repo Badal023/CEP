@@ -1,0 +1,141 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Contact Requests{% endblock %}
+{% block page_title %}<i class="fas fa-envelope" style="color: var(--saffron); margin-right: 8px;"></i> Contact Requests{% endblock %}
+
+{% block content %}
+<div class="table-card">
+    <div class="table-header">
+        <h3>All Messages ({{ contacts | length }})</h3>
+        <div class="filter-bar">
+            <a href="{{ url_for('admin_contacts') }}" class="filter-btn {% if not current_filter %}active{% endif %}">All</a>
+            <a href="{{ url_for('admin_contacts', status='new') }}" class="filter-btn {% if current_filter == 'new' %}active{% endif %}">New</a>
+            <a href="{{ url_for('admin_contacts', status='in_progress') }}" class="filter-btn {% if current_filter == 'in_progress' %}active{% endif %}">In Progress</a>
+            <a href="{{ url_for('admin_contacts', status='resolved') }}" class="filter-btn {% if current_filter == 'resolved' %}active{% endif %}">Resolved</a>
+            <a href="{{ url_for('admin_contacts', status='closed') }}" class="filter-btn {% if current_filter == 'closed' %}active{% endif %}">Closed</a>
+        </div>
+    </div>
+
+    {% if contacts %}
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Subject</th>
+                <th>Message</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in contacts %}
+            <tr>
+                <td>{{ c.id }}</td>
+                <td><strong>{{ c.name }}</strong></td>
+                <td>{{ c.email }}</td>
+                <td>{{ c.subject }}</td>
+                <td class="truncate">{{ c.message }}</td>
+                <td><span class="status-badge status-{{ c.status }}">{{ c.status | replace('_', ' ') }}</span></td>
+                <td style="white-space: nowrap;">{{ c.created_at[:10] if c.created_at else '' }}</td>
+                <td>
+                    <button class="action-btn" data-contact-id="{{ c.id }}" data-name="{{ c.name }}" data-email="{{ c.email }}" data-phone="{{ c.phone }}" data-subject="{{ c.subject }}" data-message="{{ c.message }}" data-status="{{ c.status }}" data-notes="{{ c.admin_notes }}" data-date="{{ c.created_at[:19] if c.created_at else '' }}" onclick="openModal(this)">
+                        <i class="fas fa-eye"></i> View
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-inbox"></i>
+        <p>No contact requests found</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Detail Modal -->
+<div class="modal-overlay" id="contactModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3><i class="fas fa-envelope" style="color: var(--saffron); margin-right: 6px;"></i> Contact Details</h3>
+            <button class="modal-close" onclick="closeModal()">&times;</button>
+        </div>
+        <form id="updateForm" method="POST">
+            <div class="modal-body">
+                <div class="detail-row">
+                    <label>Name</label>
+                    <div class="value" id="m-name"></div>
+                </div>
+                <div class="detail-row">
+                    <label>Email</label>
+                    <div class="value" id="m-email"></div>
+                </div>
+                <div class="detail-row">
+                    <label>Phone</label>
+                    <div class="value" id="m-phone"></div>
+                </div>
+                <div class="detail-row">
+                    <label>Subject</label>
+                    <div class="value" id="m-subject"></div>
+                </div>
+                <div class="detail-row">
+                    <label>Message</label>
+                    <div class="value" id="m-message" style="white-space: pre-wrap; background: #f8f9fa; padding: 10px; border-radius: 8px;"></div>
+                </div>
+                <div class="detail-row">
+                    <label>Submitted On</label>
+                    <div class="value" id="m-date"></div>
+                </div>
+                <hr style="margin: 18px 0; border: none; border-top: 1px solid #eee;">
+                <div class="detail-row">
+                    <label>Update Status</label>
+                    <select name="status" id="m-status">
+                        <option value="new">New</option>
+                        <option value="in_progress">In Progress</option>
+                        <option value="resolved">Resolved</option>
+                        <option value="closed">Closed</option>
+                    </select>
+                </div>
+                <div class="detail-row">
+                    <label>Admin Notes</label>
+                    <textarea name="admin_notes" id="m-notes" placeholder="Add internal notes about this request..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" onclick="closeModal()">Cancel</button>
+                <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function openModal(btn) {
+        const data = btn.dataset;
+        document.getElementById('m-name').textContent = data.name;
+        document.getElementById('m-email').textContent = data.email;
+        document.getElementById('m-phone').textContent = data.phone || '—';
+        document.getElementById('m-subject').textContent = data.subject;
+        document.getElementById('m-message').textContent = data.message;
+        document.getElementById('m-date').textContent = data.date ? data.date.replace('T', ' ') : '';
+        document.getElementById('m-status').value = data.status;
+        document.getElementById('m-notes').value = data.notes || '';
+        document.getElementById('updateForm').action = '/admin/contacts/' + data.contactId;
+        document.getElementById('contactModal').classList.add('active');
+    }
+
+    function closeModal() {
+        document.getElementById('contactModal').classList.remove('active');
+    }
+
+    document.getElementById('contactModal').addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+    });
+</script>
+{% endblock %}
