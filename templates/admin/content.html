@@ -82,6 +82,12 @@
     object-fit: cover;
     border-radius: 8px;
     border: 1px solid var(--border-gray);
+    background: linear-gradient(135deg, #f4f6f8, #e9edf2);
+}
+
+.preview-image.preview-clickable,
+.preview-hero.preview-clickable {
+    cursor: zoom-in;
 }
 
 .toolbar {
@@ -240,7 +246,7 @@
 .preview-hero {
     position: relative;
     height: 200px;
-    background: #eee center center / cover no-repeat;
+    background: linear-gradient(135deg, #f4f6f8, #dfe6ef) center center / cover no-repeat;
 }
 
 .preview-overlay {
@@ -309,6 +315,23 @@
     text-align: right;
 }
 
+.image-lightbox-box {
+    max-width: 92vw;
+    max-height: 88vh;
+    background: #0f172a;
+    border-radius: 10px;
+    padding: 8px;
+}
+
+.image-lightbox-img {
+    display: block;
+    max-width: 90vw;
+    max-height: 84vh;
+    width: auto;
+    height: auto;
+    border-radius: 8px;
+}
+
 @media (max-width: 1180px) {
     .cms-layout {
         grid-template-columns: 1fr;
@@ -355,7 +378,7 @@
                         </div>
                     </div>
                     <div>
-                        <img id="slideImagePreview" class="preview-image" src="" alt="Slide preview">
+                        <img id="slideImagePreview" class="preview-image preview-clickable" src="" alt="Slide preview" title="Click to open image">
                     </div>
                 </div>
                 <div class="status-inline" id="heroSlideStatus"></div>
@@ -385,7 +408,7 @@
             </div>
             <div class="cms-card-body">
                 <div class="preview-shell">
-                    <div class="preview-hero" id="previewHero">
+                    <div class="preview-hero preview-clickable" id="previewHero" title="Click to open image">
                         <div class="preview-overlay">
                             <h3 id="previewTitle" style="font-size: 20px; margin-bottom: 6px;">Hero Slide Preview</h3>
                             <p id="previewDescription" style="font-size: 13px; margin: 0; opacity: 0.95;">Slide description appears here</p>
@@ -480,6 +503,12 @@
     </div>
 </div>
 
+<div class="modal-overlay" id="imagePreviewModal">
+    <div class="image-lightbox-box">
+        <img id="imagePreviewModalImg" class="image-lightbox-img" src="" alt="Preview image">
+    </div>
+</div>
+
 <script id="cms-about-data" type="application/json">{{ about_items | tojson }}</script>
 <script id="cms-nav-links-data" type="application/json">{{ nav_links | tojson }}</script>
 <script id="cms-hero-slides-data" type="application/json">{{ hero_slides | tojson }}</script>
@@ -529,8 +558,11 @@
     const addSlideBtn = document.getElementById('addSlideBtn');
     const heroSlidesList = document.getElementById('heroSlidesList');
     const heroSlideStatus = document.getElementById('heroSlideStatus');
+    const imagePreviewModal = document.getElementById('imagePreviewModal');
+    const imagePreviewModalImg = document.getElementById('imagePreviewModalImg');
     let currentAboutImages = [];
     let selectedHeroSlideId = null;
+    const neutralImagePlaceholder = "data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 675'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' x2='1' y1='0' y2='1'%3E%3Cstop offset='0' stop-color='%23f4f6f8'/%3E%3Cstop offset='1' stop-color='%23dfe6ef'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='1200' height='675' fill='url(%23g)'/%3E%3Crect x='80' y='80' width='1040' height='515' rx='20' fill='%23ffffff' fill-opacity='0.55'/%3E%3Ctext x='600' y='340' text-anchor='middle' dominant-baseline='middle' font-family='Arial' font-size='38' fill='%2364748b'%3EPreview image%3C/text%3E%3C/svg%3E";
 
     function escapeHtml(value) {
         return String(value || '')
@@ -573,6 +605,19 @@
         aboutModal.classList.remove('active');
     }
 
+    function openImagePreview(url) {
+        if (!url) {
+            return;
+        }
+        imagePreviewModalImg.src = url;
+        imagePreviewModal.classList.add('active');
+    }
+
+    function closeImagePreview() {
+        imagePreviewModal.classList.remove('active');
+        imagePreviewModalImg.removeAttribute('src');
+    }
+
     function renderPreview() {
         const selectedSlide = cmsState.heroSlides.find((item) => item.id === selectedHeroSlideId) || cmsState.heroSlides[0] || {};
         const sourceSlide = {
@@ -583,7 +628,9 @@
 
         previewTitle.textContent = sourceSlide.title;
         previewDescription.textContent = sourceSlide.description;
-        previewHero.style.backgroundImage = sourceSlide.image_url ? `url('${sourceSlide.image_url}')` : 'none';
+        const previewUrl = sourceSlide.image_url || neutralImagePlaceholder;
+        previewHero.style.backgroundImage = `url('${previewUrl}')`;
+        previewHero.dataset.currentImage = previewUrl;
         previewAbout.innerHTML = '';
 
         cmsState.aboutItems.slice(0, 4).forEach((item) => {
@@ -727,7 +774,7 @@
                 slideTitle.value = item.title || '';
                 slideDescription.value = item.description || '';
                 slideImageValue.value = item.image_url || '';
-                slideImagePreview.src = item.image_url || '';
+                slideImagePreview.src = item.image_url || neutralImagePlaceholder;
                 renderHeroSlidesList();
                 renderPreview();
             });
@@ -1107,7 +1154,7 @@
             slideTitle.value = '';
             slideDescription.value = '';
             slideImageValue.value = '';
-            slideImagePreview.removeAttribute('src');
+            slideImagePreview.src = neutralImagePlaceholder;
             setStatus(heroSlideStatus, 'Hero slide added', '#155724');
             renderHeroSlidesList();
         } catch (error) {
@@ -1140,7 +1187,7 @@
     });
 
     slideImageValue.addEventListener('input', () => {
-        slideImagePreview.src = slideImageValue.value.trim();
+        slideImagePreview.src = slideImageValue.value.trim() || neutralImagePlaceholder;
         renderPreview();
     });
 
@@ -1150,10 +1197,27 @@
         }
     });
 
+    imagePreviewModal.addEventListener('click', (event) => {
+        if (event.target === imagePreviewModal || event.target === imagePreviewModalImg) {
+            closeImagePreview();
+        }
+    });
+
+    previewHero.addEventListener('click', () => {
+        openImagePreview(previewHero.dataset.currentImage || '');
+    });
+
+    slideImagePreview.addEventListener('click', () => {
+        openImagePreview(slideImagePreview.getAttribute('src') || '');
+    });
+
     renderAboutList();
     renderNavLinksList();
     renderHeroSlidesList();
     renderNoticesList();
+    if (!slideImagePreview.getAttribute('src')) {
+        slideImagePreview.src = neutralImagePlaceholder;
+    }
     renderPreview();
 </script>
 {% endblock %}
