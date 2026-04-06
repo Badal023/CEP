@@ -1,0 +1,166 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Volunteer Registrations{% endblock %}
+{% block page_title %}<i class="fas fa-users" style="color: var(--green); margin-right: 8px;"></i> Volunteer Registrations{% endblock %}
+
+{% block content %}
+<div class="table-card">
+    <div class="table-header">
+        <h3>All Registrations ({{ volunteers | length }})</h3>
+        <div class="filter-bar">
+            <a href="{{ url_for('admin_volunteers') }}" class="filter-btn {% if not current_filter %}active{% endif %}">All</a>
+            <a href="{{ url_for('admin_volunteers', status='pending') }}" class="filter-btn {% if current_filter == 'pending' %}active{% endif %}">Pending</a>
+            <a href="{{ url_for('admin_volunteers', status='approved') }}" class="filter-btn {% if current_filter == 'approved' %}active{% endif %}">Approved</a>
+            <a href="{{ url_for('admin_volunteers', status='active') }}" class="filter-btn {% if current_filter == 'active' %}active{% endif %}">Active</a>
+            <a href="{{ url_for('admin_volunteers', status='rejected') }}" class="filter-btn {% if current_filter == 'rejected' %}active{% endif %}">Rejected</a>
+        </div>
+    </div>
+
+    {% if volunteers %}
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Availability</th>
+                <th>Skills</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for v in volunteers %}
+            <tr>
+                <td>{{ v.id }}</td>
+                <td><strong>{{ v.full_name }}</strong></td>
+                <td>{{ v.email }}</td>
+                <td>{{ v.phone }}</td>
+                <td>{{ v.availability | replace('-', ' ') | title }}</td>
+                <td class="truncate">{{ v.skills | join(', ') if v.skills else '—' }}</td>
+                <td><span class="status-badge status-{{ v.status }}">{{ v.status }}</span></td>
+                <td style="white-space: nowrap;">{{ v.created_at[:10] if v.created_at else '' }}</td>
+                <td>
+                    <button class="action-btn" data-vol-id="{{ v.id }}" data-name="{{ v.full_name }}" data-email="{{ v.email }}" data-phone="{{ v.phone }}" data-occupation="{{ v.occupation }}" data-address="{{ v.address }}" data-availability="{{ v.availability }}" data-skills="{{ v.skills | join(', ') if v.skills else '' }}" data-experience="{{ v.experience }}" data-message="{{ v.message }}" data-status="{{ v.status }}" data-notes="{{ v.admin_notes }}" data-date="{{ v.created_at[:19] if v.created_at else '' }}" onclick="openVolModal(this)">
+                        <i class="fas fa-eye"></i> View
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-user-slash"></i>
+        <p>No volunteer registrations found</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Detail Modal -->
+<div class="modal-overlay" id="volModal">
+    <div class="modal">
+        <div class="modal-header">
+            <h3><i class="fas fa-user" style="color: var(--green); margin-right: 6px;"></i> Volunteer Details</h3>
+            <button class="modal-close" onclick="closeVolModal()">&times;</button>
+        </div>
+        <form id="volUpdateForm" method="POST">
+            <div class="modal-body">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="detail-row">
+                        <label>Full Name</label>
+                        <div class="value" id="v-name"></div>
+                    </div>
+                    <div class="detail-row">
+                        <label>Email</label>
+                        <div class="value" id="v-email"></div>
+                    </div>
+                    <div class="detail-row">
+                        <label>Phone</label>
+                        <div class="value" id="v-phone"></div>
+                    </div>
+                    <div class="detail-row">
+                        <label>Occupation</label>
+                        <div class="value" id="v-occupation"></div>
+                    </div>
+                </div>
+                <div class="detail-row">
+                    <label>Address</label>
+                    <div class="value" id="v-address"></div>
+                </div>
+                <div class="detail-row">
+                    <label>Availability</label>
+                    <div class="value" id="v-availability"></div>
+                </div>
+                <div class="detail-row">
+                    <label>Skills</label>
+                    <div class="value" id="v-skills"></div>
+                </div>
+                <div class="detail-row">
+                    <label>Previous Experience</label>
+                    <div class="value" id="v-experience" style="white-space: pre-wrap; background: #f8f9fa; padding: 10px; border-radius: 8px;"></div>
+                </div>
+                <div class="detail-row">
+                    <label>Motivation / Message</label>
+                    <div class="value" id="v-message" style="white-space: pre-wrap; background: #f8f9fa; padding: 10px; border-radius: 8px;"></div>
+                </div>
+                <div class="detail-row">
+                    <label>Registered On</label>
+                    <div class="value" id="v-date"></div>
+                </div>
+                <hr style="margin: 18px 0; border: none; border-top: 1px solid #eee;">
+                <div class="detail-row">
+                    <label>Update Status</label>
+                    <select name="status" id="v-status">
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved</option>
+                        <option value="active">Active</option>
+                        <option value="inactive">Inactive</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                </div>
+                <div class="detail-row">
+                    <label>Admin Notes</label>
+                    <textarea name="admin_notes" id="v-notes" placeholder="Add internal notes about this volunteer..."></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" onclick="closeVolModal()">Cancel</button>
+                <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function openVolModal(btn) {
+        const data = btn.dataset;
+        document.getElementById('v-name').textContent = data.name;
+        document.getElementById('v-email').textContent = data.email;
+        document.getElementById('v-phone').textContent = data.phone;
+        document.getElementById('v-occupation').textContent = data.occupation || '—';
+        document.getElementById('v-address').textContent = data.address;
+        document.getElementById('v-availability').textContent = (data.availability || '').replace(/-/g, ' ');
+        document.getElementById('v-skills').textContent = data.skills || '—';
+        document.getElementById('v-experience').textContent = data.experience || '—';
+        document.getElementById('v-message').textContent = data.message;
+        document.getElementById('v-date').textContent = data.date ? data.date.replace('T', ' ') : '';
+        document.getElementById('v-status').value = data.status;
+        document.getElementById('v-notes').value = data.notes || '';
+        document.getElementById('volUpdateForm').action = '/admin/volunteers/' + data.volId;
+        document.getElementById('volModal').classList.add('active');
+    }
+
+    function closeVolModal() {
+        document.getElementById('volModal').classList.remove('active');
+    }
+
+    document.getElementById('volModal').addEventListener('click', function(e) {
+        if (e.target === this) closeVolModal();
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Admin{% endblock %} - Gramin Santa Foundation</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --gov-blue: #003d82;
+            --gov-blue-dark: #002652;
+            --gov-blue-light: #0056b3;
+            --saffron: #ff6600;
+            --saffron-dark: #cc5200;
+            --green: #138808;
+            --white: #ffffff;
+            --bg-gray: #f0f2f5;
+            --card-bg: #ffffff;
+            --text-dark: #333333;
+            --text-gray: #666666;
+            --border-gray: #d4d4d4;
+            --shadow: 0 2px 8px rgba(0,0,0,0.08);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.12);
+            --sidebar-w: 250px;
+        }
+
+        body {
+            font-family: Arial, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-gray);
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            position: fixed;
+            left: 0; top: 0; bottom: 0;
+            width: var(--sidebar-w);
+            background: linear-gradient(180deg, var(--gov-blue-dark) 0%, var(--gov-blue) 100%);
+            color: white;
+            z-index: 100;
+            overflow-y: auto;
+        }
+
+        .sidebar-header {
+            padding: 20px 18px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            text-align: center;
+        }
+
+        .sidebar-header .emblem {
+            width: 50px; height: 50px;
+            margin: 0 auto 8px;
+        }
+
+        .sidebar-header h2 {
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+        }
+
+        .sidebar-header .subtitle {
+            font-size: 11px;
+            opacity: 0.7;
+            margin-top: 2px;
+        }
+
+        .sidebar-nav { padding: 12px 0; }
+
+        .sidebar-nav a {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 20px;
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            font-size: 14px;
+            transition: all 0.2s;
+            border-left: 3px solid transparent;
+        }
+
+        .sidebar-nav a:hover,
+        .sidebar-nav a.active {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border-left-color: var(--saffron);
+        }
+
+        .sidebar-nav a i { width: 20px; text-align: center; }
+
+        .sidebar-nav .section-label {
+            padding: 18px 20px 6px;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.5;
+        }
+
+        /* ===== MAIN CONTENT ===== */
+        .main-content {
+            margin-left: var(--sidebar-w);
+            min-height: 100vh;
+        }
+
+        .top-header {
+            background: white;
+            padding: 14px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow);
+            position: sticky; top: 0;
+            z-index: 50;
+        }
+
+        .top-header h1 {
+            font-size: 18px;
+            color: var(--gov-blue-dark);
+        }
+
+        .top-header .admin-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+            color: var(--text-gray);
+        }
+
+        .top-header .admin-info .avatar {
+            width: 34px; height: 34px;
+            background: var(--saffron);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 14px;
+        }
+
+        .logout-btn {
+            background: none;
+            border: 1px solid var(--border-gray);
+            padding: 6px 14px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            color: var(--text-gray);
+            text-decoration: none;
+            transition: all 0.2s;
+        }
+
+        .logout-btn:hover {
+            background: #fee;
+            border-color: #e74c3c;
+            color: #e74c3c;
+        }
+
+        .page-content {
+            padding: 28px;
+        }
+
+        /* ===== CARDS ===== */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 18px;
+            margin-bottom: 28px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: var(--shadow);
+            border-left: 4px solid var(--gov-blue);
+        }
+
+        .stat-card.saffron { border-left-color: var(--saffron); }
+        .stat-card.green { border-left-color: var(--green); }
+
+        .stat-card .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--gov-blue-dark);
+        }
+
+        .stat-card .stat-label {
+            font-size: 13px;
+            color: var(--text-gray);
+            margin-top: 4px;
+        }
+
+        /* ===== TABLE ===== */
+        .table-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .table-header {
+            padding: 18px 22px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .table-header h3 {
+            font-size: 16px;
+            color: var(--gov-blue-dark);
+        }
+
+        .filter-bar {
+            display: flex;
+            gap: 8px;
+        }
+
+        .filter-btn {
+            padding: 6px 14px;
+            border: 1px solid var(--border-gray);
+            background: white;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            text-decoration: none;
+            color: var(--text-gray);
+            transition: all 0.2s;
+        }
+
+        .filter-btn:hover,
+        .filter-btn.active {
+            background: var(--gov-blue);
+            color: white;
+            border-color: var(--gov-blue);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: #f8f9fa;
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-gray);
+            border-bottom: 2px solid #eee;
+        }
+
+        td {
+            padding: 14px 16px;
+            font-size: 13px;
+            border-bottom: 1px solid #f0f0f0;
+            vertical-align: top;
+        }
+
+        tr:hover { background: #fafbfc; }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        .status-new, .status-pending { background: #fff3cd; color: #856404; }
+        .status-in_progress, .status-active { background: #cce5ff; color: #004085; }
+        .status-resolved, .status-approved, .status-completed { background: #d4edda; color: #155724; }
+        .status-closed, .status-inactive, .status-rejected { background: #f8d7da; color: #721c24; }
+        .status-failed { background: #f8d7da; color: #721c24; }
+
+        /* ===== MODAL ===== */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 200;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.active { display: flex; }
+
+        .modal {
+            background: white;
+            border-radius: 14px;
+            width: 520px;
+            max-width: 90vw;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: var(--shadow-md);
+        }
+
+        .modal-header {
+            padding: 18px 22px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 { font-size: 16px; color: var(--gov-blue-dark); }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 20px;
+            cursor: pointer;
+            color: var(--text-gray);
+        }
+
+        .modal-body { padding: 22px; }
+
+        .detail-row {
+            margin-bottom: 14px;
+        }
+
+        .detail-row label {
+            display: block;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-gray);
+            margin-bottom: 4px;
+        }
+
+        .detail-row .value {
+            font-size: 14px;
+            color: var(--text-dark);
+        }
+
+        .modal-body select,
+        .modal-body textarea {
+            width: 100%;
+            padding: 9px 12px;
+            border: 1px solid var(--border-gray);
+            border-radius: 8px;
+            font-size: 13px;
+            font-family: inherit;
+        }
+
+        .modal-body textarea { min-height: 80px; resize: vertical; }
+
+        .modal-footer {
+            padding: 14px 22px;
+            border-top: 1px solid #eee;
+            text-align: right;
+        }
+
+        .btn-primary {
+            background: var(--gov-blue);
+            color: white;
+            border: none;
+            padding: 9px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary:hover { background: var(--gov-blue-dark); }
+
+        .btn-cancel {
+            background: #eee;
+            color: var(--text-dark);
+            border: none;
+            padding: 9px 20px;
+            border-radius: 8px;
+            font-size: 13px;
+            cursor: pointer;
+            margin-right: 8px;
+        }
+
+        /* ===== FLASH MESSAGES ===== */
+        .flash-msg {
+            padding: 12px 18px;
+            border-radius: 8px;
+            margin-bottom: 18px;
+            font-size: 13px;
+        }
+
+        .flash-msg.success { background: #d4edda; color: #155724; }
+        .flash-msg.error { background: #f8d7da; color: #721c24; }
+
+        /* ===== EMPTY STATE ===== */
+        .empty-state {
+            text-align: center;
+            padding: 50px;
+            color: var(--text-gray);
+        }
+
+        .empty-state i {
+            font-size: 48px;
+            margin-bottom: 14px;
+            opacity: 0.3;
+        }
+
+        .truncate {
+            max-width: 200px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .action-btn {
+            background: var(--gov-blue);
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover { background: var(--saffron); }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .sidebar { width: 60px; }
+            .sidebar-header h2, .sidebar-header .subtitle, .sidebar-nav .section-label { display: none; }
+            .sidebar-nav a span { display: none; }
+            .sidebar-nav a { justify-content: center; padding: 14px; }
+            .main-content { margin-left: 60px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <svg class="emblem" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="50" cy="50" r="48" fill="#003d82" stroke="#ff6600" stroke-width="3"/>
+                <text x="50" y="60" font-size="40" font-weight="bold" fill="#ff6600" text-anchor="middle" font-family="Arial">GS</text>
+            </svg>
+            <h2>Gramin Santa</h2>
+            <div class="subtitle">Admin Panel</div>
+        </div>
+        <nav class="sidebar-nav">
+            <div class="section-label">Overview</div>
+            <a href="{{ url_for('admin_dashboard') }}" class="{% if request.endpoint == 'admin_dashboard' %}active{% endif %}">
+                <i class="fas fa-tachometer-alt"></i> <span>Dashboard</span>
+            </a>
+            <div class="section-label">Management</div>
+            <a href="{{ url_for('admin_contacts') }}" class="{% if request.endpoint == 'admin_contacts' %}active{% endif %}">
+                <i class="fas fa-envelope"></i> <span>Contact Requests</span>
+            </a>
+            <a href="{{ url_for('admin_volunteers') }}" class="{% if request.endpoint == 'admin_volunteers' %}active{% endif %}">
+                <i class="fas fa-users"></i> <span>Volunteers</span>
+            </a>
+            <a href="{{ url_for('admin_payments') }}" class="{% if request.endpoint == 'admin_payments' %}active{% endif %}">
+                <i class="fas fa-indian-rupee-sign"></i> <span>Payments</span>
+            </a>
+            <a href="{{ url_for('content.admin_content_page') }}" class="{% if request.endpoint == 'content.admin_content_page' %}active{% endif %}">
+                <i class="fas fa-pen-ruler"></i> <span>Content Management</span>
+            </a>
+            <div class="section-label">Account</div>
+            <a href="{{ url_for('admin_logout') }}">
+                <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
+            </a>
+        </nav>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="main-content">
+        <header class="top-header">
+            <h1>{% block page_title %}Dashboard{% endblock %}</h1>
+            <div class="admin-info">
+                <span>{{ session.get('admin_name', 'Admin') }}</span>
+                <div class="avatar">{{ session.get('admin_name', 'A')[0] | upper }}</div>
+                <a href="{{ url_for('admin_logout') }}" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+            </div>
+        </header>
+
+        <div class="page-content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% for category, message in messages %}
+                    <div class="flash-msg {{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

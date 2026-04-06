@@ -1,0 +1,284 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Content Management{% endblock %}
+{% block page_title %}<i class="fas fa-pen-ruler" style="color: var(--saffron); margin-right: 8px;"></i> Content Management{% endblock %}
+
+{% block extra_css %}
+.content-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.form-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    padding: 20px;
+}
+
+.form-card h3 {
+    font-size: 16px;
+    color: var(--gov-blue-dark);
+    margin-bottom: 14px;
+}
+
+.form-row {
+    margin-bottom: 14px;
+}
+
+.form-row label {
+    display: block;
+    font-size: 12px;
+    margin-bottom: 6px;
+    color: var(--text-gray);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.form-row input,
+.form-row textarea,
+.form-row select {
+    width: 100%;
+    border: 1px solid var(--border-gray);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 13px;
+    font-family: inherit;
+}
+
+.form-row textarea {
+    min-height: 120px;
+    resize: vertical;
+}
+
+.helper {
+    font-size: 12px;
+    color: var(--text-gray);
+    margin-top: 6px;
+}
+
+.preview-wrap {
+    margin-top: 12px;
+    border: 1px dashed var(--border-gray);
+    border-radius: 8px;
+    padding: 8px;
+    background: #fafbfc;
+}
+
+.preview-wrap img {
+    width: 100%;
+    max-height: 200px;
+    object-fit: cover;
+    border-radius: 6px;
+    display: none;
+}
+
+.preview-wrap.show img {
+    display: block;
+}
+
+.key-pill {
+    display: inline-block;
+    font-size: 11px;
+    background: #eef5ff;
+    border: 1px solid #d0e2ff;
+    color: var(--gov-blue-dark);
+    border-radius: 999px;
+    padding: 3px 10px;
+}
+
+.mono {
+    font-family: Consolas, "Courier New", monospace;
+    word-break: break-all;
+}
+
+@media (max-width: 1024px) {
+    .content-grid {
+        grid-template-columns: 1fr;
+    }
+}
+{% endblock %}
+
+{% block content %}
+<div class="content-grid">
+    <div class="form-card">
+        <h3><i class="fas fa-file-lines" style="color: var(--gov-blue);"></i> Update Text Content</h3>
+        <form method="POST" action="{{ url_for('content.admin_update_content') }}">
+            <div class="form-row">
+                <label for="content-key">Content Key</label>
+                <input id="content-key" name="key" required placeholder="homepage_title">
+                <div class="helper">Use stable keys like <span class="mono">homepage_title</span>, <span class="mono">notice_text</span>, <span class="mono">homepage_description</span>.</div>
+            </div>
+            <div class="form-row">
+                <label for="content-type">Type</label>
+                <select id="content-type" name="type">
+                    <option value="text">text</option>
+                    <option value="image">image</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <label for="content-value">Value</label>
+                <textarea id="content-value" name="value" required placeholder="Enter CMS content..."></textarea>
+            </div>
+            <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Save Content</button>
+        </form>
+    </div>
+
+    <div class="form-card">
+        <h3><i class="fas fa-image" style="color: var(--saffron);"></i> Upload Image</h3>
+        <div class="form-row">
+            <label for="image-key">Content Key</label>
+            <input id="image-key" placeholder="hero_image" value="hero_image">
+            <div class="helper">Uploaded URL can be automatically saved to this key.</div>
+        </div>
+        <div class="form-row">
+            <label for="image-file">Select Image</label>
+            <input id="image-file" type="file" accept="image/*">
+        </div>
+        <div class="preview-wrap" id="previewWrap">
+            <img id="uploadPreview" alt="Upload preview">
+        </div>
+        <div class="form-row" style="margin-top: 12px;">
+            <button type="button" class="btn-primary" id="uploadBtn"><i class="fas fa-upload"></i> Upload Image</button>
+        </div>
+        <div class="helper" id="uploadStatus"></div>
+        <div class="form-row" style="margin-top: 10px;">
+            <label for="uploaded-url">Uploaded URL</label>
+            <textarea id="uploaded-url" readonly placeholder="Image URL will appear here"></textarea>
+        </div>
+    </div>
+</div>
+
+<div class="table-card">
+    <div class="table-header">
+        <h3>Existing Content Keys ({{ content_rows | length }})</h3>
+    </div>
+
+    {% if content_rows %}
+    <table>
+        <thead>
+            <tr>
+                <th>Key</th>
+                <th>Type</th>
+                <th>Value</th>
+                <th>Updated</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in content_rows %}
+            <tr>
+                <td><span class="key-pill mono">{{ row.key }}</span></td>
+                <td>{{ row.type or 'text' }}</td>
+                <td class="truncate" title="{{ row.value }}">{{ row.value }}</td>
+                <td>{{ row.updated_at[:19] if row.updated_at else '' }}</td>
+                <td>
+                    <button
+                        class="action-btn"
+                        type="button"
+                        data-key="{{ row.key }}"
+                        data-type="{{ row.type or 'text' }}"
+                        data-value="{{ row.value }}"
+                        onclick="fillForm(this)"
+                    >
+                        <i class="fas fa-pen"></i> Edit
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-database"></i>
+        <p>No content keys saved yet.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function fillForm(btn) {
+        document.getElementById('content-key').value = btn.dataset.key;
+        document.getElementById('content-type').value = btn.dataset.type || 'text';
+        document.getElementById('content-value').value = btn.dataset.value || '';
+        document.getElementById('content-value').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    const imageFileInput = document.getElementById('image-file');
+    const previewWrap = document.getElementById('previewWrap');
+    const uploadPreview = document.getElementById('uploadPreview');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const uploadStatus = document.getElementById('uploadStatus');
+    const uploadedUrl = document.getElementById('uploaded-url');
+
+    imageFileInput.addEventListener('change', function () {
+        const file = this.files[0];
+        if (!file) {
+            previewWrap.classList.remove('show');
+            uploadPreview.removeAttribute('src');
+            return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = function (event) {
+            uploadPreview.src = event.target.result;
+            previewWrap.classList.add('show');
+        };
+        reader.readAsDataURL(file);
+    });
+
+    uploadBtn.addEventListener('click', async function () {
+        const file = imageFileInput.files[0];
+        const key = document.getElementById('image-key').value.trim();
+
+        if (!file) {
+            uploadStatus.textContent = 'Please choose an image before uploading.';
+            uploadStatus.style.color = '#721c24';
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('image', file);
+        if (key) {
+            formData.append('key', key);
+        }
+
+        uploadBtn.disabled = true;
+        uploadStatus.textContent = 'Uploading image...';
+        uploadStatus.style.color = '#004085';
+
+        try {
+            const response = await fetch('{{ url_for("content.admin_upload_image") }}', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'Accept': 'application/json'
+                }
+            });
+            const result = await response.json();
+
+            if (!response.ok || !result.success) {
+                throw new Error(result.error || 'Upload failed');
+            }
+
+            uploadedUrl.value = result.url;
+            uploadStatus.textContent = 'Upload successful. URL is ready to use.';
+            uploadStatus.style.color = '#155724';
+            if (key) {
+                document.getElementById('content-key').value = key;
+                document.getElementById('content-type').value = 'image';
+                document.getElementById('content-value').value = result.url;
+            }
+        } catch (error) {
+            uploadStatus.textContent = error.message;
+            uploadStatus.style.color = '#721c24';
+        } finally {
+            uploadBtn.disabled = false;
+        }
+    });
+</script>
+{% endblock %}

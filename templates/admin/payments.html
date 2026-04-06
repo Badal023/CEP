@@ -1,0 +1,57 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Payments{% endblock %}
+{% block page_title %}<i class="fas fa-indian-rupee-sign" style="color: var(--saffron); margin-right: 8px;"></i> Payments{% endblock %}
+
+{% block content %}
+<div class="table-card" style="padding: 40px; text-align: center;">
+    <div style="margin-bottom: 20px;">
+        <i class="fas fa-tools" style="font-size: 48px; color: var(--saffron); opacity: 0.5;"></i>
+    </div>
+    <h3 style="font-size: 20px; color: var(--gov-blue-dark); margin-bottom: 8px;">Payment Module - Coming Soon</h3>
+    <p style="color: var(--text-gray); font-size: 14px; max-width: 500px; margin: 0 auto 24px;">
+        The online payment gateway and donation tracking system is planned for a future release. 
+        The database table is ready and this module will be activated once the payment integration is complete.
+    </p>
+    <div style="background: #fff3cd; padding: 14px 20px; border-radius: 10px; display: inline-block; font-size: 13px; color: #856404;">
+        <i class="fas fa-info-circle"></i>
+        Database table <strong>payments</strong> is already created and ready for integration.
+    </div>
+</div>
+
+{% if payments %}
+<div class="table-card" style="margin-top: 20px;">
+    <div class="table-header">
+        <h3>Payment Records ({{ payments | length }})</h3>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Donor Name</th>
+                <th>Email</th>
+                <th>Amount</th>
+                <th>Transaction ID</th>
+                <th>Method</th>
+                <th>Status</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in payments %}
+            <tr>
+                <td>{{ p.id }}</td>
+                <td>{{ p.donor_name or '—' }}</td>
+                <td>{{ p.donor_email or '—' }}</td>
+                <td>&#8377; {{ p.amount or '0' }}</td>
+                <td>{{ p.transaction_id or '—' }}</td>
+                <td>{{ p.payment_method or '—' }}</td>
+                <td><span class="status-badge status-{{ p.status }}">{{ p.status }}</span></td>
+                <td>{{ p.created_at[:10] if p.created_at else '' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endif %}
+{% endblock %}

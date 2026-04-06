@@ -1,0 +1,84 @@
+{% extends "admin/base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.contacts_total }}</div>
+        <div class="stat-label">Total Contact Requests</div>
+    </div>
+    <div class="stat-card saffron">
+        <div class="stat-value">{{ stats.contacts_new }}</div>
+        <div class="stat-label">New / Unread Messages</div>
+    </div>
+    <div class="stat-card green">
+        <div class="stat-value">{{ stats.volunteers_total }}</div>
+        <div class="stat-label">Volunteer Registrations</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ stats.volunteers_pending }}</div>
+        <div class="stat-label">Pending Approvals</div>
+    </div>
+    <div class="stat-card saffron">
+        <div class="stat-value">{{ stats.payments_total }}</div>
+        <div class="stat-label">Payments (Future Scope)</div>
+    </div>
+    <div class="stat-card green">
+        <div class="stat-value">{{ stats.content_total }}</div>
+        <div class="stat-label">CMS Content Keys</div>
+    </div>
+</div>
+
+<!-- Quick Access Cards -->
+<div class="stats-grid">
+    <div class="table-card" style="padding: 22px;">
+        <h3 style="font-size: 16px; color: var(--gov-blue-dark); margin-bottom: 12px;">
+            <i class="fas fa-envelope" style="color: var(--saffron);"></i> Contact Requests
+        </h3>
+        <p style="font-size: 13px; color: var(--text-gray); margin-bottom: 16px;">
+            View and respond to messages from the public website contact form.
+        </p>
+        <a href="{{ url_for('admin_contacts') }}" class="action-btn" style="padding: 8px 16px; font-size: 13px; text-decoration: none;">
+            <i class="fas fa-arrow-right"></i> Manage Contacts
+        </a>
+    </div>
+
+    <div class="table-card" style="padding: 22px;">
+        <h3 style="font-size: 16px; color: var(--gov-blue-dark); margin-bottom: 12px;">
+            <i class="fas fa-users" style="color: var(--green);"></i> Volunteer Management
+        </h3>
+        <p style="font-size: 13px; color: var(--text-gray); margin-bottom: 16px;">
+            Review volunteer applications, approve or assign them to programs.
+        </p>
+        <a href="{{ url_for('admin_volunteers') }}" class="action-btn" style="padding: 8px 16px; font-size: 13px; text-decoration: none;">
+            <i class="fas fa-arrow-right"></i> Manage Volunteers
+        </a>
+    </div>
+
+    <div class="table-card" style="padding: 22px;">
+        <h3 style="font-size: 16px; color: var(--gov-blue-dark); margin-bottom: 12px;">
+            <i class="fas fa-indian-rupee-sign" style="color: var(--saffron);"></i> Payments
+        </h3>
+        <p style="font-size: 13px; color: var(--text-gray); margin-bottom: 16px;">
+            Payment gateway integration is planned for a future release.
+        </p>
+        <a href="{{ url_for('admin_payments') }}" class="action-btn" style="padding: 8px 16px; font-size: 13px; text-decoration: none;">
+            <i class="fas fa-arrow-right"></i> View Payments
+        </a>
+    </div>
+
+    <div class="table-card" style="padding: 22px;">
+        <h3 style="font-size: 16px; color: var(--gov-blue-dark); margin-bottom: 12px;">
+            <i class="fas fa-pen-ruler" style="color: var(--gov-blue);"></i> Website Content
+        </h3>
+        <p style="font-size: 13px; color: var(--text-gray); margin-bottom: 16px;">
+            Update homepage text, notice bar content, and image URLs without redeploying.
+        </p>
+        <a href="{{ url_for('content.admin_content_page') }}" class="action-btn" style="padding: 8px 16px; font-size: 13px; text-decoration: none;">
+            <i class="fas fa-arrow-right"></i> Manage Content
+        </a>
+    </div>
+</div>
+{% endblock %}
