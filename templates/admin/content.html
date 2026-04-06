@@ -179,6 +179,11 @@
     background: #fff;
 }
 
+.simple-item.is-selected {
+    border-color: var(--gov-blue);
+    box-shadow: 0 0 0 1px rgba(0, 61, 130, 0.2);
+}
+
 .simple-item-main {
     min-width: 0;
 }
@@ -524,6 +529,7 @@
     const heroSlidesList = document.getElementById('heroSlidesList');
     const heroSlideStatus = document.getElementById('heroSlideStatus');
     let currentAboutImages = [];
+    let selectedHeroSlideId = null;
 
     function escapeHtml(value) {
         return String(value || '')
@@ -567,10 +573,11 @@
     }
 
     function renderPreview() {
+        const selectedSlide = cmsState.heroSlides.find((item) => item.id === selectedHeroSlideId) || cmsState.heroSlides[0] || {};
         const sourceSlide = {
-            title: slideTitle.value.trim() || (cmsState.heroSlides[0] && cmsState.heroSlides[0].title) || 'Hero Slide Preview',
-            description: slideDescription.value.trim() || (cmsState.heroSlides[0] && (cmsState.heroSlides[0].description || cmsState.heroSlides[0].subtitle)) || 'Slide description appears here',
-            image_url: slideImageValue.value.trim() || (cmsState.heroSlides[0] && cmsState.heroSlides[0].image_url) || ''
+            title: slideTitle.value.trim() || selectedSlide.title || 'Hero Slide Preview',
+            description: slideDescription.value.trim() || selectedSlide.description || 'Slide description appears here',
+            image_url: slideImageValue.value.trim() || selectedSlide.image_url || ''
         };
 
         previewTitle.textContent = sourceSlide.title;
@@ -695,12 +702,18 @@
     function renderHeroSlidesList() {
         if (!cmsState.heroSlides.length) {
             heroSlidesList.innerHTML = '<div class="status-inline">No hero slides yet.</div>';
+            selectedHeroSlideId = null;
             return;
         }
+
+        if (!selectedHeroSlideId || !cmsState.heroSlides.some((item) => item.id === selectedHeroSlideId)) {
+            selectedHeroSlideId = cmsState.heroSlides[0].id;
+        }
+
         heroSlidesList.innerHTML = '';
         cmsState.heroSlides.forEach((item) => {
             const row = document.createElement('div');
-            row.className = 'simple-item';
+            row.className = `simple-item ${item.id === selectedHeroSlideId ? 'is-selected' : ''}`;
             row.innerHTML = `
                 <div class="simple-item-main">
                     <div class="simple-item-title">${escapeHtml(item.title || 'Untitled slide')}</div>
@@ -708,6 +721,15 @@
                 </div>
                 <button class="btn-danger" type="button" data-id="${item.id}">Delete</button>
             `;
+            row.querySelector('.simple-item-main').addEventListener('click', () => {
+                selectedHeroSlideId = item.id;
+                slideTitle.value = item.title || '';
+                slideDescription.value = item.description || '';
+                slideImageValue.value = item.image_url || '';
+                slideImagePreview.src = item.image_url || '';
+                renderHeroSlidesList();
+                renderPreview();
+            });
             row.querySelector('button').addEventListener('click', () => removeSlide(item.id));
             heroSlidesList.appendChild(row);
         });
@@ -922,6 +944,9 @@
                 throw new Error(result.error || 'Delete failed');
             }
             cmsState.heroSlides = cmsState.heroSlides.filter((item) => item.id !== slideId);
+            if (selectedHeroSlideId === slideId) {
+                selectedHeroSlideId = cmsState.heroSlides.length ? cmsState.heroSlides[0].id : null;
+            }
             renderHeroSlidesList();
         } catch (error) {
             alert(error.message);
@@ -1077,6 +1102,7 @@
             }
             cmsState.heroSlides.push(result.data);
             cmsState.heroSlides.sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
+            selectedHeroSlideId = result.data.id;
             slideTitle.value = '';
             slideDescription.value = '';
             slideImageValue.value = '';
