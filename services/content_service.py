@@ -395,7 +395,14 @@ def add_hero_slide(payload):
     }).execute()
     if not result.data:
         raise ContentServiceError("Failed to add hero slide")
-    return result.data[0]
+    row = result.data[0]
+    return {
+        "id": row.get("id"),
+        "title": row.get("title", ""),
+        "description": row.get("description", ""),
+        "image_url": resolve_asset_url(row.get("image_url", "")),
+        "order_index": row.get("order_index", 0),
+    }
 
 
 def delete_hero_slide(slide_id):

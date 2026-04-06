@@ -332,6 +332,39 @@
     <div class="cms-left">
         <section class="cms-card">
             <div class="cms-card-header">
+                <h3><i class="fas fa-images" style="color: var(--saffron);"></i> Hero Slides</h3>
+            </div>
+            <div class="cms-card-body">
+                <div class="field">
+                    <label for="slideTitle">Slide Title</label>
+                    <input id="slideTitle" placeholder="Slide heading">
+                </div>
+                <div class="field">
+                    <label for="slideDescription">Slide Description</label>
+                    <input id="slideDescription" placeholder="Short description shown on hero">
+                </div>
+                <div class="grid-2">
+                    <div>
+                        <div class="field">
+                            <label for="slideImageValue">Slide Image Value (path or URL)</label>
+                            <input id="slideImageValue" placeholder="images/hero/slide.jpg or https://...">
+                        </div>
+                        <div class="toolbar">
+                            <button type="button" class="btn-outline" id="uploadSlideBtn"><i class="fas fa-upload"></i> Upload Slide Image</button>
+                            <button type="button" class="btn-primary" id="addSlideBtn"><i class="fas fa-plus"></i> Add Slide</button>
+                        </div>
+                    </div>
+                    <div>
+                        <img id="slideImagePreview" class="preview-image" src="" alt="Slide preview">
+                    </div>
+                </div>
+                <div class="status-inline" id="heroSlideStatus"></div>
+                <div class="simple-list" id="heroSlidesList"></div>
+            </div>
+        </section>
+
+        <section class="cms-card">
+            <div class="cms-card-header">
                 <h3><i class="fas fa-address-card" style="color: var(--saffron);"></i> About Us Management</h3>
                 <div class="toolbar">
                     <button type="button" class="btn-outline" id="addAboutBtn"><i class="fas fa-plus"></i> Add New Item</button>
@@ -394,38 +427,6 @@
             </div>
         </section>
 
-        <section class="cms-card">
-            <div class="cms-card-header">
-                <h3><i class="fas fa-images" style="color: var(--saffron);"></i> Hero Slides</h3>
-            </div>
-            <div class="cms-card-body">
-                <div class="field">
-                    <label for="slideTitle">Slide Title</label>
-                    <input id="slideTitle" placeholder="Slide heading">
-                </div>
-                <div class="field">
-                    <label for="slideDescription">Slide Description</label>
-                    <input id="slideDescription" placeholder="Short description shown on hero">
-                </div>
-                <div class="grid-2">
-                    <div>
-                        <div class="field">
-                            <label for="slideImageValue">Slide Image Value (path or URL)</label>
-                            <input id="slideImageValue" placeholder="images/hero/slide.jpg or https://...">
-                        </div>
-                        <div class="toolbar">
-                            <button type="button" class="btn-outline" id="uploadSlideBtn"><i class="fas fa-upload"></i> Upload Slide Image</button>
-                            <button type="button" class="btn-primary" id="addSlideBtn"><i class="fas fa-plus"></i> Add Slide</button>
-                        </div>
-                    </div>
-                    <div>
-                        <img id="slideImagePreview" class="preview-image" src="" alt="Slide preview">
-                    </div>
-                </div>
-                <div class="status-inline" id="heroSlideStatus"></div>
-                <div class="simple-list" id="heroSlidesList"></div>
-            </div>
-        </section>
     </div>
 </div>
 
