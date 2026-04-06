@@ -249,13 +249,6 @@
     justify-content: flex-end;
 }
 
-.preview-notice {
-    background: var(--saffron);
-    color: white;
-    font-size: 12px;
-    padding: 8px 12px;
-}
-
 .preview-about {
     padding: 14px;
     display: grid;
@@ -334,45 +327,6 @@
     <div class="cms-left">
         <section class="cms-card">
             <div class="cms-card-header">
-                <h3><i class="fas fa-house" style="color: var(--gov-blue);"></i> Homepage Settings</h3>
-                <div class="status-inline" id="homepageStatus">Ready</div>
-            </div>
-            <div class="cms-card-body">
-                <form id="homepageForm">
-                    <div class="field">
-                        <label for="homeTitle">Homepage Title</label>
-                        <input id="homeTitle" name="title" value="{{ homepage.title }}" required>
-                    </div>
-                    <div class="field">
-                        <label for="homeDescription">Homepage Description</label>
-                        <textarea id="homeDescription" name="description" required>{{ homepage.description }}</textarea>
-                    </div>
-                    <div class="field">
-                        <label for="noticeText">Notice Text</label>
-                        <input id="noticeText" name="notice_text" value="{{ homepage.notice_text }}" required>
-                    </div>
-
-                    <div class="grid-2">
-                        <div>
-                            <div class="field">
-                                <label for="heroImageValue">Hero Image Value (path or URL)</label>
-                                <input id="heroImageValue" name="hero_image" value="{{ homepage.hero_image_value or homepage.hero_image }}">
-                            </div>
-                            <div class="toolbar">
-                                <button type="button" class="btn-outline" id="uploadHeroBtn"><i class="fas fa-upload"></i> Upload Hero Image</button>
-                                <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Save Homepage</button>
-                            </div>
-                        </div>
-                        <div>
-                            <img id="heroImagePreview" class="preview-image" src="{{ homepage.hero_image or '' }}" alt="Hero preview">
-                        </div>
-                    </div>
-                </form>
-            </div>
-        </section>
-
-        <section class="cms-card">
-            <div class="cms-card-header">
                 <h3><i class="fas fa-address-card" style="color: var(--saffron);"></i> About Us Management</h3>
                 <div class="toolbar">
                     <button type="button" class="btn-outline" id="addAboutBtn"><i class="fas fa-plus"></i> Add New Item</button>
@@ -393,11 +347,10 @@
             </div>
             <div class="cms-card-body">
                 <div class="preview-shell">
-                    <div class="preview-notice" id="previewNotice">{{ homepage.notice_text }}</div>
-                    <div class="preview-hero" id="previewHero" data-hero-image="{{ homepage.hero_image or '' }}">
+                    <div class="preview-hero" id="previewHero">
                         <div class="preview-overlay">
-                            <h3 id="previewTitle" style="font-size: 20px; margin-bottom: 6px;">{{ homepage.title }}</h3>
-                            <p id="previewDescription" style="font-size: 13px; margin: 0; opacity: 0.95;">{{ homepage.description }}</p>
+                            <h3 id="previewTitle" style="font-size: 20px; margin-bottom: 6px;">Hero Slide Preview</h3>
+                            <p id="previewDescription" style="font-size: 13px; margin: 0; opacity: 0.95;">Slide description appears here</p>
                         </div>
                     </div>
                     <div class="preview-about" id="previewAbout"></div>
@@ -446,8 +399,8 @@
                     <input id="slideTitle" placeholder="Slide heading">
                 </div>
                 <div class="field">
-                    <label for="slideSubtitle">Slide Subtitle</label>
-                    <input id="slideSubtitle" placeholder="Short subtitle label">
+                    <label for="slideDescription">Slide Description</label>
+                    <input id="slideDescription" placeholder="Short description shown on hero">
                 </div>
                 <div class="grid-2">
                     <div>
@@ -521,7 +474,6 @@
     </div>
 </div>
 
-<script id="cms-homepage-data" type="application/json">{{ homepage | tojson }}</script>
 <script id="cms-about-data" type="application/json">{{ about_items | tojson }}</script>
 <script id="cms-nav-links-data" type="application/json">{{ nav_links | tojson }}</script>
 <script id="cms-hero-slides-data" type="application/json">{{ hero_slides | tojson }}</script>
@@ -531,20 +483,14 @@
 {% block scripts %}
 <script>
     const cmsState = {
-        homepage: JSON.parse(document.getElementById('cms-homepage-data').textContent || '{}'),
         aboutItems: JSON.parse(document.getElementById('cms-about-data').textContent || '[]'),
         navLinks: JSON.parse(document.getElementById('cms-nav-links-data').textContent || '[]'),
         heroSlides: JSON.parse(document.getElementById('cms-hero-slides-data').textContent || '[]'),
         notices: JSON.parse(document.getElementById('cms-notices-data').textContent || '[]')
     };
 
-    const homepageStatus = document.getElementById('homepageStatus');
-    const homepageForm = document.getElementById('homepageForm');
-    const heroImageValue = document.getElementById('heroImageValue');
-    const heroImagePreview = document.getElementById('heroImagePreview');
     const previewTitle = document.getElementById('previewTitle');
     const previewDescription = document.getElementById('previewDescription');
-    const previewNotice = document.getElementById('previewNotice');
     const previewHero = document.getElementById('previewHero');
     const previewAbout = document.getElementById('previewAbout');
     const aboutList = document.getElementById('aboutList');
@@ -571,7 +517,7 @@
     const noticesList = document.getElementById('noticesList');
     const noticeItemStatus = document.getElementById('noticeItemStatus');
     const slideTitle = document.getElementById('slideTitle');
-    const slideSubtitle = document.getElementById('slideSubtitle');
+    const slideDescription = document.getElementById('slideDescription');
     const slideImageValue = document.getElementById('slideImageValue');
     const slideImagePreview = document.getElementById('slideImagePreview');
     const addSlideBtn = document.getElementById('addSlideBtn');
@@ -621,11 +567,15 @@
     }
 
     function renderPreview() {
-        previewTitle.textContent = document.getElementById('homeTitle').value.trim();
-        previewDescription.textContent = document.getElementById('homeDescription').value.trim();
-        previewNotice.textContent = document.getElementById('noticeText').value.trim();
-        const hero = heroImageValue.value.trim();
-        previewHero.style.backgroundImage = hero ? `url('${heroImagePreview.src || hero}')` : 'none';
+        const sourceSlide = {
+            title: slideTitle.value.trim() || (cmsState.heroSlides[0] && cmsState.heroSlides[0].title) || 'Hero Slide Preview',
+            description: slideDescription.value.trim() || (cmsState.heroSlides[0] && (cmsState.heroSlides[0].description || cmsState.heroSlides[0].subtitle)) || 'Slide description appears here',
+            image_url: slideImageValue.value.trim() || (cmsState.heroSlides[0] && cmsState.heroSlides[0].image_url) || ''
+        };
+
+        previewTitle.textContent = sourceSlide.title;
+        previewDescription.textContent = sourceSlide.description;
+        previewHero.style.backgroundImage = sourceSlide.image_url ? `url('${sourceSlide.image_url}')` : 'none';
         previewAbout.innerHTML = '';
 
         cmsState.aboutItems.slice(0, 4).forEach((item) => {
@@ -711,8 +661,8 @@
             row.className = 'simple-item';
             row.innerHTML = `
                 <div class="simple-item-main">
-                    <div class="simple-item-title">${escapeHtml(item.label || 'Untitled')}</div>
-                    <div class="simple-item-sub">${escapeHtml(item.href || '#')}</div>
+                    <div class="simple-item-title">${escapeHtml(item.name || 'Untitled')}</div>
+                    <div class="simple-item-sub">${escapeHtml(item.url || '#')}</div>
                 </div>
                 <button class="btn-danger" type="button" data-id="${item.id}">Delete</button>
             `;
@@ -732,8 +682,8 @@
             row.className = 'simple-item';
             row.innerHTML = `
                 <div class="simple-item-main">
-                    <div class="simple-item-title">${escapeHtml(item.notice_text || '')}</div>
-                    <div class="simple-item-sub">${escapeHtml(item.notice_link || '')}</div>
+                    <div class="simple-item-title">${escapeHtml(item.text || '')}</div>
+                    <div class="simple-item-sub">${escapeHtml(item.link_url || '')}</div>
                 </div>
                 <button class="btn-danger" type="button" data-id="${item.id}">Delete</button>
             `;
@@ -754,13 +704,14 @@
             row.innerHTML = `
                 <div class="simple-item-main">
                     <div class="simple-item-title">${escapeHtml(item.title || 'Untitled slide')}</div>
-                    <div class="simple-item-sub">${escapeHtml(item.subtitle || '')}</div>
+                    <div class="simple-item-sub">${escapeHtml(item.description || '')}</div>
                 </div>
                 <button class="btn-danger" type="button" data-id="${item.id}">Delete</button>
             `;
             row.querySelector('button').addEventListener('click', () => removeSlide(item.id));
             heroSlidesList.appendChild(row);
         });
+        renderPreview();
     }
 
     let dragItem = null;
@@ -1011,38 +962,6 @@
         picker.click();
     }
 
-    homepageForm.addEventListener('submit', async (event) => {
-        event.preventDefault();
-        setStatus(homepageStatus, 'Saving homepage...', '#004085');
-        const payload = {
-            title: document.getElementById('homeTitle').value.trim(),
-            description: document.getElementById('homeDescription').value.trim(),
-            notice_text: document.getElementById('noticeText').value.trim(),
-            hero_image: heroImageValue.value.trim(),
-        };
-
-        try {
-            const response = await fetch('{{ url_for("content.admin_update_homepage") }}', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-                body: JSON.stringify(payload)
-            });
-            const result = await response.json();
-            if (!response.ok || !result.success) {
-                throw new Error(result.error || 'Failed to save homepage');
-            }
-
-            cmsState.homepage = result.data;
-            if (cmsState.homepage.hero_image) {
-                heroImagePreview.src = cmsState.homepage.hero_image;
-            }
-            setStatus(homepageStatus, 'Homepage saved', '#155724');
-            renderPreview();
-        } catch (error) {
-            setStatus(homepageStatus, error.message, '#721c24');
-        }
-    });
-
     aboutForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         const payload = {
@@ -1087,8 +1006,8 @@
 
     addNavLinkBtn.addEventListener('click', async () => {
         const payload = {
-            label: navLabel.value.trim(),
-            href: navHref.value.trim()
+            name: navLabel.value.trim(),
+            url: navHref.value.trim()
         };
         setStatus(navLinkStatus, 'Adding nav link...', '#004085');
         try {
@@ -1114,8 +1033,8 @@
 
     addNoticeBtn.addEventListener('click', async () => {
         const payload = {
-            notice_text: noticeItemText.value.trim(),
-            notice_link: noticeItemLink.value.trim()
+            text: noticeItemText.value.trim(),
+            link_url: noticeItemLink.value.trim()
         };
         setStatus(noticeItemStatus, 'Adding notice...', '#004085');
         try {
@@ -1142,7 +1061,7 @@
     addSlideBtn.addEventListener('click', async () => {
         const payload = {
             title: slideTitle.value.trim(),
-            subtitle: slideSubtitle.value.trim(),
+            description: slideDescription.value.trim(),
             image_url: slideImageValue.value.trim()
         };
         setStatus(heroSlideStatus, 'Adding hero slide...', '#004085');
@@ -1159,7 +1078,7 @@
             cmsState.heroSlides.push(result.data);
             cmsState.heroSlides.sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
             slideTitle.value = '';
-            slideSubtitle.value = '';
+            slideDescription.value = '';
             slideImageValue.value = '';
             slideImagePreview.removeAttribute('src');
             setStatus(heroSlideStatus, 'Hero slide added', '#155724');
@@ -1169,21 +1088,15 @@
         }
     });
 
-    heroImageValue.addEventListener('input', renderPreview);
-    document.getElementById('homeTitle').addEventListener('input', renderPreview);
-    document.getElementById('homeDescription').addEventListener('input', renderPreview);
-    document.getElementById('noticeText').addEventListener('input', renderPreview);
     aboutImageValue.addEventListener('input', () => {
         aboutImagePreview.src = aboutImageValue.value.trim();
     });
+    slideTitle.addEventListener('input', renderPreview);
+    slideDescription.addEventListener('input', renderPreview);
 
     document.getElementById('addAboutBtn').addEventListener('click', () => openAboutModal());
     document.getElementById('closeAboutModal').addEventListener('click', closeAboutModal);
     document.getElementById('refreshPreviewBtn').addEventListener('click', renderPreview);
-
-    document.getElementById('uploadHeroBtn').addEventListener('click', () => {
-        uploadImageFromPicker(heroImageValue, heroImagePreview, homepageStatus);
-    });
 
     document.getElementById('uploadAboutImageBtn').addEventListener('click', () => {
         uploadImageFromPicker(aboutImageValue, aboutImagePreview, aboutFormStatus);
@@ -1201,6 +1114,7 @@
 
     slideImageValue.addEventListener('input', () => {
         slideImagePreview.src = slideImageValue.value.trim();
+        renderPreview();
     });
 
     aboutModal.addEventListener('click', (event) => {
@@ -1213,9 +1127,6 @@
     renderNavLinksList();
     renderHeroSlidesList();
     renderNoticesList();
-    if (previewHero.dataset.heroImage && !heroImagePreview.getAttribute('src')) {
-        heroImagePreview.src = previewHero.dataset.heroImage;
-    }
     renderPreview();
 </script>
 {% endblock %}
