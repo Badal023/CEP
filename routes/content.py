@@ -2,8 +2,17 @@ from flask import Blueprint, jsonify, request, render_template, flash, redirect,
 
 from services.content_service import (
     ContentServiceError,
+    add_hero_slide,
+    add_nav_link,
+    add_notice,
     add_about_item,
+    delete_hero_slide,
+    delete_nav_link,
+    delete_notice,
     delete_about_item,
+    get_hero_slides,
+    get_nav_links,
+    get_notices,
     get_about_items,
     get_homepage_content,
     get_legacy_content_map,
@@ -53,12 +62,36 @@ def create_content_blueprint(admin_required):
         except Exception:
             return jsonify({"error": "Failed to fetch about items"}), 500
 
+    @content_bp.route("/api/nav-links", methods=["GET"])
+    def api_nav_links():
+        try:
+            return jsonify(get_nav_links()), 200
+        except Exception:
+            return jsonify({"error": "Failed to fetch nav links"}), 500
+
+    @content_bp.route("/api/hero-slides", methods=["GET"])
+    def api_hero_slides():
+        try:
+            return jsonify(get_hero_slides()), 200
+        except Exception:
+            return jsonify({"error": "Failed to fetch hero slides"}), 500
+
+    @content_bp.route("/api/notices", methods=["GET"])
+    def api_notices():
+        try:
+            return jsonify(get_notices()), 200
+        except Exception:
+            return jsonify({"error": "Failed to fetch notices"}), 500
+
     @content_bp.route("/admin/content", methods=["GET"])
     @admin_required
     def admin_cms_dashboard():
         try:
             homepage = get_homepage_content()
             about_items = get_about_items()
+            nav_links = get_nav_links()
+            hero_slides = get_hero_slides()
+            notices = get_notices()
         except Exception as exc:
             flash(f"Could not load CMS data: {exc}", "error")
             homepage = {
@@ -69,7 +102,86 @@ def create_content_blueprint(admin_required):
                 "hero_image_value": "",
             }
             about_items = []
-        return render_template("admin/content.html", homepage=homepage, about_items=about_items)
+            nav_links = []
+            hero_slides = []
+            notices = []
+        return render_template(
+            "admin/content.html",
+            homepage=homepage,
+            about_items=about_items,
+            nav_links=nav_links,
+            hero_slides=hero_slides,
+            notices=notices,
+        )
+
+    @content_bp.route("/admin/add-nav-link", methods=["POST"])
+    @admin_required
+    def admin_add_nav_link():
+        payload = request.get_json(silent=True) if request.is_json else request.form
+        try:
+            row = add_nav_link(payload)
+            return jsonify({"success": True, "data": row}), 200
+        except ContentServiceError as exc:
+            return jsonify({"success": False, "error": str(exc)}), 400
+        except Exception:
+            return jsonify({"success": False, "error": "Failed to add nav link"}), 500
+
+    @content_bp.route("/admin/delete-nav-link/<int:link_id>", methods=["POST"])
+    @admin_required
+    def admin_delete_nav_link(link_id):
+        try:
+            deleted = delete_nav_link(link_id)
+            if not deleted:
+                return jsonify({"success": False, "error": "Link not found"}), 404
+            return jsonify({"success": True}), 200
+        except Exception:
+            return jsonify({"success": False, "error": "Failed to delete nav link"}), 500
+
+    @content_bp.route("/admin/add-slide", methods=["POST"])
+    @admin_required
+    def admin_add_slide():
+        payload = request.get_json(silent=True) if request.is_json else request.form
+        try:
+            row = add_hero_slide(payload)
+            return jsonify({"success": True, "data": row}), 200
+        except ContentServiceError as exc:
+            return jsonify({"success": False, "error": str(exc)}), 400
+        except Exception:
+            return jsonify({"success": False, "error": "Failed to add slide"}), 500
+
+    @content_bp.route("/admin/delete-slide/<int:slide_id>", methods=["POST"])
+    @admin_required
+    def admin_delete_slide(slide_id):
+        try:
+            deleted = delete_hero_slide(slide_id)
+            if not deleted:
+                return jsonify({"success": False, "error": "Slide not found"}), 404
+            return jsonify({"success": True}), 200
+        except Exception:
+            return jsonify({"success": False, "error": "Failed to delete slide"}), 500
+
+    @content_bp.route("/admin/add-notice", methods=["POST"])
+    @admin_required
+    def admin_add_notice():
+        payload = request.get_json(silent=True) if request.is_json else request.form
+        try:
+            row = add_notice(payload)
+            return jsonify({"success": True, "data": row}), 200
+        except ContentServiceError as exc:
+            return jsonify({"success": False, "error": str(exc)}), 400
+        except Exception:
+            return jsonify({"success": False, "error": "Failed to add notice"}), 500
+
+    @content_bp.route("/admin/delete-notice/<int:notice_id>", methods=["POST"])
+    @admin_required
+    def admin_delete_notice(notice_id):
+        try:
+            deleted = delete_notice(notice_id)
+            if not deleted:
+                return jsonify({"success": False, "error": "Notice not found"}), 404
+            return jsonify({"success": True}), 200
+        except Exception:
+            return jsonify({"success": False, "error": "Failed to delete notice"}), 500
 
     @content_bp.route("/admin/update-homepage", methods=["POST"])
     @admin_required

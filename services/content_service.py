@@ -256,6 +256,103 @@ def reorder_about_items(ordered_ids):
     return get_about_items()
 
 
+def _next_order_index(table_name):
+    result = supabase.table(table_name).select("order_index").order("order_index", desc=True).limit(1).execute()
+    rows = result.data or []
+    if not rows:
+        return 1
+    return int(rows[0].get("order_index") or 0) + 1
+
+
+def get_nav_links():
+    _ensure_supabase()
+    result = supabase.table("nav_links").select("id, name, url, order_index").order("order_index").order("id").execute()
+    return result.data or []
+
+
+def add_nav_link(payload):
+    _ensure_supabase()
+    name = _safe_text(payload.get("name"))
+    url = _safe_text(payload.get("url"))
+    if not name or not url:
+        raise ContentServiceError("name and url are required")
+    result = supabase.table("nav_links").insert({
+        "name": name,
+        "url": url,
+        "order_index": _next_order_index("nav_links"),
+    }).execute()
+    if not result.data:
+        raise ContentServiceError("Failed to add nav link")
+    return result.data[0]
+
+
+def delete_nav_link(link_id):
+    _ensure_supabase()
+    result = supabase.table("nav_links").delete().eq("id", link_id).execute()
+    return bool(result.data)
+
+
+def get_hero_slides():
+    _ensure_supabase()
+    result = supabase.table("hero_slides").select("id, title, description, image_url, order_index").order("order_index").order("id").execute()
+    rows = result.data or []
+    for row in rows:
+        row["image_url"] = resolve_asset_url(row.get("image_url", ""))
+    return rows
+
+
+def add_hero_slide(payload):
+    _ensure_supabase()
+    title = _safe_text(payload.get("title"))
+    description = _safe_text(payload.get("description"))
+    image_url = _safe_text(payload.get("image_url"))
+    if not title or not image_url:
+        raise ContentServiceError("title and image_url are required")
+    result = supabase.table("hero_slides").insert({
+        "title": title,
+        "description": description,
+        "image_url": image_url,
+        "order_index": _next_order_index("hero_slides"),
+    }).execute()
+    if not result.data:
+        raise ContentServiceError("Failed to add hero slide")
+    return result.data[0]
+
+
+def delete_hero_slide(slide_id):
+    _ensure_supabase()
+    result = supabase.table("hero_slides").delete().eq("id", slide_id).execute()
+    return bool(result.data)
+
+
+def get_notices():
+    _ensure_supabase()
+    result = supabase.table("notices").select("id, text, link_url, order_index").order("order_index").order("id").execute()
+    return result.data or []
+
+
+def add_notice(payload):
+    _ensure_supabase()
+    text = _safe_text(payload.get("text"))
+    link_url = _safe_text(payload.get("link_url"))
+    if not text:
+        raise ContentServiceError("text is required")
+    result = supabase.table("notices").insert({
+        "text": text,
+        "link_url": link_url,
+        "order_index": _next_order_index("notices"),
+    }).execute()
+    if not result.data:
+        raise ContentServiceError("Failed to add notice")
+    return result.data[0]
+
+
+def delete_notice(notice_id):
+    _ensure_supabase()
+    result = supabase.table("notices").delete().eq("id", notice_id).execute()
+    return bool(result.data)
+
+
 def _is_allowed_image(filename):
     if not filename or "." not in filename:
         return False

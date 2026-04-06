@@ -161,6 +161,41 @@
     gap: 6px;
 }
 
+.simple-list {
+    display: grid;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.simple-item {
+    border: 1px solid #e6e6e6;
+    border-radius: 8px;
+    padding: 10px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    align-items: center;
+    font-size: 13px;
+    background: #fff;
+}
+
+.simple-item-main {
+    min-width: 0;
+}
+
+.simple-item-title {
+    color: var(--gov-blue-dark);
+    font-weight: 700;
+}
+
+.simple-item-sub {
+    color: var(--text-gray);
+    font-size: 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 .drag-handle {
     cursor: grab;
     color: var(--text-gray);
@@ -345,6 +380,70 @@
                 </div>
             </div>
         </section>
+
+        <section class="cms-card">
+            <div class="cms-card-header">
+                <h3><i class="fas fa-link" style="color: var(--gov-blue);"></i> Navigation Links & Notices</h3>
+            </div>
+            <div class="cms-card-body">
+                <div class="field">
+                    <label>New Navigation Link</label>
+                    <div class="grid-2">
+                        <input id="navLabel" placeholder="Label (e.g. About Us)">
+                        <input id="navHref" placeholder="Path or anchor (e.g. #about or contact.html)">
+                    </div>
+                    <div class="toolbar" style="margin-top: 8px;">
+                        <button type="button" class="btn-primary" id="addNavLinkBtn"><i class="fas fa-plus"></i> Add Link</button>
+                    </div>
+                    <div class="status-inline" id="navLinkStatus"></div>
+                    <div class="simple-list" id="navLinksList"></div>
+                </div>
+
+                <div class="field" style="margin-top: 14px;">
+                    <label>New Notice</label>
+                    <input id="noticeItemText" placeholder="Notice text">
+                    <input id="noticeItemLink" placeholder="Optional notice link (https://... or /path)" style="margin-top: 8px;">
+                    <div class="toolbar" style="margin-top: 8px;">
+                        <button type="button" class="btn-primary" id="addNoticeBtn"><i class="fas fa-plus"></i> Add Notice</button>
+                    </div>
+                    <div class="status-inline" id="noticeItemStatus"></div>
+                    <div class="simple-list" id="noticesList"></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="cms-card">
+            <div class="cms-card-header">
+                <h3><i class="fas fa-images" style="color: var(--saffron);"></i> Hero Slides</h3>
+            </div>
+            <div class="cms-card-body">
+                <div class="field">
+                    <label for="slideTitle">Slide Title</label>
+                    <input id="slideTitle" placeholder="Slide heading">
+                </div>
+                <div class="field">
+                    <label for="slideSubtitle">Slide Subtitle</label>
+                    <input id="slideSubtitle" placeholder="Short subtitle label">
+                </div>
+                <div class="grid-2">
+                    <div>
+                        <div class="field">
+                            <label for="slideImageValue">Slide Image Value (path or URL)</label>
+                            <input id="slideImageValue" placeholder="images/hero/slide.jpg or https://...">
+                        </div>
+                        <div class="toolbar">
+                            <button type="button" class="btn-outline" id="uploadSlideBtn"><i class="fas fa-upload"></i> Upload Slide Image</button>
+                            <button type="button" class="btn-primary" id="addSlideBtn"><i class="fas fa-plus"></i> Add Slide</button>
+                        </div>
+                    </div>
+                    <div>
+                        <img id="slideImagePreview" class="preview-image" src="" alt="Slide preview">
+                    </div>
+                </div>
+                <div class="status-inline" id="heroSlideStatus"></div>
+                <div class="simple-list" id="heroSlidesList"></div>
+            </div>
+        </section>
     </div>
 </div>
 
@@ -388,13 +487,19 @@
 
 <script id="cms-homepage-data" type="application/json">{{ homepage | tojson }}</script>
 <script id="cms-about-data" type="application/json">{{ about_items | tojson }}</script>
+<script id="cms-nav-links-data" type="application/json">{{ nav_links | tojson }}</script>
+<script id="cms-hero-slides-data" type="application/json">{{ hero_slides | tojson }}</script>
+<script id="cms-notices-data" type="application/json">{{ notices | tojson }}</script>
 {% endblock %}
 
 {% block scripts %}
 <script>
     const cmsState = {
         homepage: JSON.parse(document.getElementById('cms-homepage-data').textContent || '{}'),
-        aboutItems: JSON.parse(document.getElementById('cms-about-data').textContent || '[]')
+        aboutItems: JSON.parse(document.getElementById('cms-about-data').textContent || '[]'),
+        navLinks: JSON.parse(document.getElementById('cms-nav-links-data').textContent || '[]'),
+        heroSlides: JSON.parse(document.getElementById('cms-hero-slides-data').textContent || '[]'),
+        notices: JSON.parse(document.getElementById('cms-notices-data').textContent || '[]')
     };
 
     const homepageStatus = document.getElementById('homepageStatus');
@@ -416,6 +521,32 @@
     const aboutImageValue = document.getElementById('aboutImageValue');
     const aboutImagePreview = document.getElementById('aboutImagePreview');
     const aboutFormStatus = document.getElementById('aboutFormStatus');
+    const navLabel = document.getElementById('navLabel');
+    const navHref = document.getElementById('navHref');
+    const addNavLinkBtn = document.getElementById('addNavLinkBtn');
+    const navLinksList = document.getElementById('navLinksList');
+    const navLinkStatus = document.getElementById('navLinkStatus');
+    const noticeItemText = document.getElementById('noticeItemText');
+    const noticeItemLink = document.getElementById('noticeItemLink');
+    const addNoticeBtn = document.getElementById('addNoticeBtn');
+    const noticesList = document.getElementById('noticesList');
+    const noticeItemStatus = document.getElementById('noticeItemStatus');
+    const slideTitle = document.getElementById('slideTitle');
+    const slideSubtitle = document.getElementById('slideSubtitle');
+    const slideImageValue = document.getElementById('slideImageValue');
+    const slideImagePreview = document.getElementById('slideImagePreview');
+    const addSlideBtn = document.getElementById('addSlideBtn');
+    const heroSlidesList = document.getElementById('heroSlidesList');
+    const heroSlideStatus = document.getElementById('heroSlideStatus');
+
+    function escapeHtml(value) {
+        return String(value || '')
+            .replaceAll('&', '&amp;')
+            .replaceAll('<', '&lt;')
+            .replaceAll('>', '&gt;')
+            .replaceAll('"', '&quot;')
+            .replaceAll("'", '&#39;');
+    }
 
     function setStatus(element, message, color) {
         element.textContent = message;
@@ -494,6 +625,69 @@
         renderPreview();
     }
 
+    function renderNavLinksList() {
+        if (!cmsState.navLinks.length) {
+            navLinksList.innerHTML = '<div class="status-inline">No nav links yet.</div>';
+            return;
+        }
+        navLinksList.innerHTML = '';
+        cmsState.navLinks.forEach((item) => {
+            const row = document.createElement('div');
+            row.className = 'simple-item';
+            row.innerHTML = `
+                <div class="simple-item-main">
+                    <div class="simple-item-title">${escapeHtml(item.label || 'Untitled')}</div>
+                    <div class="simple-item-sub">${escapeHtml(item.href || '#')}</div>
+                </div>
+                <button class="btn-danger" type="button" data-id="${item.id}">Delete</button>
+            `;
+            row.querySelector('button').addEventListener('click', () => removeNavLink(item.id));
+            navLinksList.appendChild(row);
+        });
+    }
+
+    function renderNoticesList() {
+        if (!cmsState.notices.length) {
+            noticesList.innerHTML = '<div class="status-inline">No notices yet.</div>';
+            return;
+        }
+        noticesList.innerHTML = '';
+        cmsState.notices.forEach((item) => {
+            const row = document.createElement('div');
+            row.className = 'simple-item';
+            row.innerHTML = `
+                <div class="simple-item-main">
+                    <div class="simple-item-title">${escapeHtml(item.notice_text || '')}</div>
+                    <div class="simple-item-sub">${escapeHtml(item.notice_link || '')}</div>
+                </div>
+                <button class="btn-danger" type="button" data-id="${item.id}">Delete</button>
+            `;
+            row.querySelector('button').addEventListener('click', () => removeNotice(item.id));
+            noticesList.appendChild(row);
+        });
+    }
+
+    function renderHeroSlidesList() {
+        if (!cmsState.heroSlides.length) {
+            heroSlidesList.innerHTML = '<div class="status-inline">No hero slides yet.</div>';
+            return;
+        }
+        heroSlidesList.innerHTML = '';
+        cmsState.heroSlides.forEach((item) => {
+            const row = document.createElement('div');
+            row.className = 'simple-item';
+            row.innerHTML = `
+                <div class="simple-item-main">
+                    <div class="simple-item-title">${escapeHtml(item.title || 'Untitled slide')}</div>
+                    <div class="simple-item-sub">${escapeHtml(item.subtitle || '')}</div>
+                </div>
+                <button class="btn-danger" type="button" data-id="${item.id}">Delete</button>
+            `;
+            row.querySelector('button').addEventListener('click', () => removeSlide(item.id));
+            heroSlidesList.appendChild(row);
+        });
+    }
+
     let dragItem = null;
 
     function addDragHandlers(element) {
@@ -558,6 +752,66 @@
             }
             cmsState.aboutItems = cmsState.aboutItems.filter((item) => item.id !== itemId);
             renderAboutList();
+        } catch (error) {
+            alert(error.message);
+        }
+    }
+
+    async function removeNavLink(linkId) {
+        if (!confirm('Delete this nav link?')) {
+            return;
+        }
+        try {
+            const response = await fetch(`{{ url_for("content.admin_delete_nav_link", link_id=0) }}`.replace('/0', `/${linkId}`), {
+                method: 'POST',
+                headers: { 'Accept': 'application/json' }
+            });
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                throw new Error(result.error || 'Delete failed');
+            }
+            cmsState.navLinks = cmsState.navLinks.filter((item) => item.id !== linkId);
+            renderNavLinksList();
+        } catch (error) {
+            alert(error.message);
+        }
+    }
+
+    async function removeNotice(noticeId) {
+        if (!confirm('Delete this notice?')) {
+            return;
+        }
+        try {
+            const response = await fetch(`{{ url_for("content.admin_delete_notice", notice_id=0) }}`.replace('/0', `/${noticeId}`), {
+                method: 'POST',
+                headers: { 'Accept': 'application/json' }
+            });
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                throw new Error(result.error || 'Delete failed');
+            }
+            cmsState.notices = cmsState.notices.filter((item) => item.id !== noticeId);
+            renderNoticesList();
+        } catch (error) {
+            alert(error.message);
+        }
+    }
+
+    async function removeSlide(slideId) {
+        if (!confirm('Delete this hero slide?')) {
+            return;
+        }
+        try {
+            const response = await fetch(`{{ url_for("content.admin_delete_slide", slide_id=0) }}`.replace('/0', `/${slideId}`), {
+                method: 'POST',
+                headers: { 'Accept': 'application/json' }
+            });
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                throw new Error(result.error || 'Delete failed');
+            }
+            cmsState.heroSlides = cmsState.heroSlides.filter((item) => item.id !== slideId);
+            renderHeroSlidesList();
         } catch (error) {
             alert(error.message);
         }
@@ -668,6 +922,90 @@
         }
     });
 
+    addNavLinkBtn.addEventListener('click', async () => {
+        const payload = {
+            label: navLabel.value.trim(),
+            href: navHref.value.trim()
+        };
+        setStatus(navLinkStatus, 'Adding nav link...', '#004085');
+        try {
+            const response = await fetch('{{ url_for("content.admin_add_nav_link") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                throw new Error(result.error || 'Failed to add link');
+            }
+            cmsState.navLinks.push(result.data);
+            cmsState.navLinks.sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
+            navLabel.value = '';
+            navHref.value = '';
+            setStatus(navLinkStatus, 'Nav link added', '#155724');
+            renderNavLinksList();
+        } catch (error) {
+            setStatus(navLinkStatus, error.message, '#721c24');
+        }
+    });
+
+    addNoticeBtn.addEventListener('click', async () => {
+        const payload = {
+            notice_text: noticeItemText.value.trim(),
+            notice_link: noticeItemLink.value.trim()
+        };
+        setStatus(noticeItemStatus, 'Adding notice...', '#004085');
+        try {
+            const response = await fetch('{{ url_for("content.admin_add_notice") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                throw new Error(result.error || 'Failed to add notice');
+            }
+            cmsState.notices.push(result.data);
+            cmsState.notices.sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
+            noticeItemText.value = '';
+            noticeItemLink.value = '';
+            setStatus(noticeItemStatus, 'Notice added', '#155724');
+            renderNoticesList();
+        } catch (error) {
+            setStatus(noticeItemStatus, error.message, '#721c24');
+        }
+    });
+
+    addSlideBtn.addEventListener('click', async () => {
+        const payload = {
+            title: slideTitle.value.trim(),
+            subtitle: slideSubtitle.value.trim(),
+            image_url: slideImageValue.value.trim()
+        };
+        setStatus(heroSlideStatus, 'Adding hero slide...', '#004085');
+        try {
+            const response = await fetch('{{ url_for("content.admin_add_slide") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                throw new Error(result.error || 'Failed to add slide');
+            }
+            cmsState.heroSlides.push(result.data);
+            cmsState.heroSlides.sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
+            slideTitle.value = '';
+            slideSubtitle.value = '';
+            slideImageValue.value = '';
+            slideImagePreview.removeAttribute('src');
+            setStatus(heroSlideStatus, 'Hero slide added', '#155724');
+            renderHeroSlidesList();
+        } catch (error) {
+            setStatus(heroSlideStatus, error.message, '#721c24');
+        }
+    });
+
     heroImageValue.addEventListener('input', renderPreview);
     document.getElementById('homeTitle').addEventListener('input', renderPreview);
     document.getElementById('homeDescription').addEventListener('input', renderPreview);
@@ -688,6 +1026,14 @@
         uploadImageFromPicker(aboutImageValue, aboutImagePreview, aboutFormStatus);
     });
 
+    document.getElementById('uploadSlideBtn').addEventListener('click', () => {
+        uploadImageFromPicker(slideImageValue, slideImagePreview, heroSlideStatus);
+    });
+
+    slideImageValue.addEventListener('input', () => {
+        slideImagePreview.src = slideImageValue.value.trim();
+    });
+
     aboutModal.addEventListener('click', (event) => {
         if (event.target === aboutModal) {
             closeAboutModal();
@@ -695,6 +1041,9 @@
     });
 
     renderAboutList();
+    renderNavLinksList();
+    renderHeroSlidesList();
+    renderNoticesList();
     if (previewHero.dataset.heroImage && !heroImagePreview.getAttribute('src')) {
         heroImagePreview.src = previewHero.dataset.heroImage;
     }

@@ -94,6 +94,37 @@ CREATE TABLE IF NOT EXISTS about_items (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 8. Navigation links (multi-item)
+CREATE TABLE IF NOT EXISTS nav_links (
+    id BIGSERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
+    url TEXT NOT NULL,
+    order_index INT DEFAULT 1,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 9. Hero slides (multi-item)
+CREATE TABLE IF NOT EXISTS hero_slides (
+    id BIGSERIAL PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT,
+    image_url TEXT NOT NULL,
+    order_index INT DEFAULT 1,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 10. Notice messages (multi-item)
+CREATE TABLE IF NOT EXISTS notices (
+    id BIGSERIAL PRIMARY KEY,
+    text TEXT NOT NULL,
+    link_url TEXT,
+    order_index INT DEFAULT 1,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- =====================================================
 -- Row Level Security (RLS) Policies
 -- =====================================================
@@ -106,6 +137,9 @@ ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE site_content ENABLE ROW LEVEL SECURITY;
 ALTER TABLE homepage ENABLE ROW LEVEL SECURITY;
 ALTER TABLE about_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE nav_links ENABLE ROW LEVEL SECURITY;
+ALTER TABLE hero_slides ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notices ENABLE ROW LEVEL SECURITY;
 
 -- Allow inserts from the anon key (frontend submissions)
 CREATE POLICY "Allow anonymous inserts on contacts"
@@ -201,6 +235,42 @@ CREATE POLICY "Allow anon delete on about_items"
 CREATE POLICY "Allow full access for service role on about_items"
     ON about_items FOR ALL TO service_role USING (true) WITH CHECK (true);
 
+CREATE POLICY "Allow anon select on nav_links"
+    ON nav_links FOR SELECT TO anon USING (true);
+
+CREATE POLICY "Allow anon insert on nav_links"
+    ON nav_links FOR INSERT TO anon WITH CHECK (true);
+
+CREATE POLICY "Allow anon delete on nav_links"
+    ON nav_links FOR DELETE TO anon USING (true);
+
+CREATE POLICY "Allow full access for service role on nav_links"
+    ON nav_links FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+CREATE POLICY "Allow anon select on hero_slides"
+    ON hero_slides FOR SELECT TO anon USING (true);
+
+CREATE POLICY "Allow anon insert on hero_slides"
+    ON hero_slides FOR INSERT TO anon WITH CHECK (true);
+
+CREATE POLICY "Allow anon delete on hero_slides"
+    ON hero_slides FOR DELETE TO anon USING (true);
+
+CREATE POLICY "Allow full access for service role on hero_slides"
+    ON hero_slides FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+CREATE POLICY "Allow anon select on notices"
+    ON notices FOR SELECT TO anon USING (true);
+
+CREATE POLICY "Allow anon insert on notices"
+    ON notices FOR INSERT TO anon WITH CHECK (true);
+
+CREATE POLICY "Allow anon delete on notices"
+    ON notices FOR DELETE TO anon USING (true);
+
+CREATE POLICY "Allow full access for service role on notices"
+    ON notices FOR ALL TO service_role USING (true) WITH CHECK (true);
+
 -- =====================================================
 -- Updated_at trigger function
 -- =====================================================
@@ -234,4 +304,16 @@ CREATE TRIGGER homepage_updated_at
 
 CREATE TRIGGER about_items_updated_at
     BEFORE UPDATE ON about_items
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER nav_links_updated_at
+    BEFORE UPDATE ON nav_links
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER hero_slides_updated_at
+    BEFORE UPDATE ON hero_slides
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER notices_updated_at
+    BEFORE UPDATE ON notices
     FOR EACH ROW EXECUTE FUNCTION update_updated_at();
