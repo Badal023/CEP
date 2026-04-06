@@ -266,12 +266,14 @@
             }
 
             uploadedUrl.value = result.url;
-            uploadStatus.textContent = 'Upload successful. URL is ready to use.';
+            uploadStatus.textContent = result.private_bucket
+                ? 'Upload successful. Signed URL generated and storage path saved to CMS key.'
+                : 'Upload successful. Public URL is ready to use.';
             uploadStatus.style.color = '#155724';
             if (key) {
                 document.getElementById('content-key').value = key;
                 document.getElementById('content-type').value = 'image';
-                document.getElementById('content-value').value = result.url;
+                document.getElementById('content-value').value = result.stored_value || result.url;
             }
         } catch (error) {
             uploadStatus.textContent = error.message;

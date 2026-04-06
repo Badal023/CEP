@@ -71,10 +71,10 @@ def create_content_blueprint(admin_required):
         key = (request.form.get("key") or request.args.get("key") or "").strip()
 
         try:
-            image_url = upload_image(image_file)
+            upload_result = upload_image(image_file)
             saved_row = None
             if key:
-                saved_row = upsert_content(key, image_url, "image")
+                saved_row = upsert_content(key, upload_result["stored_value"], "image")
         except ContentServiceError as exc:
             return jsonify({"success": False, "error": str(exc)}), 400
         except Exception:
@@ -83,7 +83,10 @@ def create_content_blueprint(admin_required):
         response = {
             "success": True,
             "message": "Image uploaded successfully",
-            "url": image_url,
+            "url": upload_result["url"],
+            "stored_value": upload_result["stored_value"],
+            "storage_path": upload_result["storage_path"],
+            "private_bucket": upload_result["private_bucket"],
         }
         if saved_row:
             response["data"] = saved_row
