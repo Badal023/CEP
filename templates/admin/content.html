@@ -1,45 +1,68 @@
 {% extends "admin/base.html" %}
 
-{% block title %}Content Management{% endblock %}
-{% block page_title %}<i class="fas fa-pen-ruler" style="color: var(--saffron); margin-right: 8px;"></i> Content Management{% endblock %}
+{% block title %}CMS Dashboard{% endblock %}
+{% block page_title %}<i class="fas fa-layer-group" style="color: var(--saffron); margin-right: 8px;"></i> Structured CMS{% endblock %}
 
 {% block extra_css %}
-.content-grid {
+<style>
+.cms-layout {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1.15fr 0.85fr;
     gap: 20px;
-    margin-bottom: 20px;
 }
 
-.form-card {
-    background: white;
+.cms-left,
+.cms-right {
+    display: grid;
+    gap: 20px;
+}
+
+.cms-card {
+    background: var(--card-bg);
     border-radius: 12px;
     box-shadow: var(--shadow);
+    overflow: hidden;
+}
+
+.cms-card-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.cms-card-header h3 {
+    font-size: 16px;
+    color: var(--gov-blue-dark);
+}
+
+.cms-card-body {
     padding: 20px;
 }
 
-.form-card h3 {
-    font-size: 16px;
-    color: var(--gov-blue-dark);
+.grid-2 {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.field {
     margin-bottom: 14px;
 }
 
-.form-row {
-    margin-bottom: 14px;
-}
-
-.form-row label {
+.field label {
     display: block;
     font-size: 12px;
-    margin-bottom: 6px;
     color: var(--text-gray);
     text-transform: uppercase;
     letter-spacing: 0.4px;
+    margin-bottom: 6px;
 }
 
-.form-row input,
-.form-row textarea,
-.form-row select {
+.field input,
+.field textarea,
+.field select {
     width: 100%;
     border: 1px solid var(--border-gray);
     border-radius: 8px;
@@ -48,239 +71,633 @@
     font-family: inherit;
 }
 
-.form-row textarea {
-    min-height: 120px;
+.field textarea {
+    min-height: 110px;
     resize: vertical;
 }
 
-.helper {
+.preview-image {
+    width: 100%;
+    max-height: 180px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid var(--border-gray);
+}
+
+.toolbar {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.btn-outline {
+    background: white;
+    border: 1px solid var(--border-gray);
+    color: var(--text-dark);
+    padding: 9px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.btn-danger {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.status-inline {
     font-size: 12px;
     color: var(--text-gray);
-    margin-top: 6px;
 }
 
-.preview-wrap {
-    margin-top: 12px;
-    border: 1px dashed var(--border-gray);
+.about-list {
+    display: grid;
+    gap: 12px;
+}
+
+.about-card {
+    border: 1px solid #e6e6e6;
+    border-radius: 10px;
+    padding: 12px;
+    display: grid;
+    grid-template-columns: 64px 1fr auto;
+    gap: 12px;
+    align-items: center;
+    background: #fff;
+}
+
+.about-card.dragging {
+    opacity: 0.65;
+}
+
+.about-thumb {
+    width: 64px;
+    height: 64px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+
+.about-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--gov-blue-dark);
+}
+
+.about-desc {
+    font-size: 12px;
+    color: var(--text-gray);
+    max-height: 38px;
+    overflow: hidden;
+}
+
+.about-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.drag-handle {
+    cursor: grab;
+    color: var(--text-gray);
+    margin-right: 6px;
+}
+
+.preview-shell {
+    border: 1px solid #e6e6e6;
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.preview-hero {
+    position: relative;
+    height: 200px;
+    background: #eee center center / cover no-repeat;
+}
+
+.preview-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(0deg, rgba(0,0,0,0.55), rgba(0,0,0,0.25));
+    color: white;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+}
+
+.preview-notice {
+    background: var(--saffron);
+    color: white;
+    font-size: 12px;
+    padding: 8px 12px;
+}
+
+.preview-about {
+    padding: 14px;
+    display: grid;
+    gap: 8px;
+}
+
+.preview-about-item {
+    border: 1px solid #eee;
     border-radius: 8px;
     padding: 8px;
-    background: #fafbfc;
+    font-size: 12px;
 }
 
-.preview-wrap img {
-    width: 100%;
-    max-height: 200px;
-    object-fit: cover;
-    border-radius: 6px;
+.modal-overlay {
     display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.45);
+    z-index: 300;
+    align-items: center;
+    justify-content: center;
 }
 
-.preview-wrap.show img {
-    display: block;
+.modal-overlay.active {
+    display: flex;
 }
 
-.key-pill {
-    display: inline-block;
-    font-size: 11px;
-    background: #eef5ff;
-    border: 1px solid #d0e2ff;
-    color: var(--gov-blue-dark);
-    border-radius: 999px;
-    padding: 3px 10px;
+.modal-box {
+    width: 640px;
+    max-width: 92vw;
+    max-height: 88vh;
+    overflow-y: auto;
+    background: white;
+    border-radius: 12px;
+    box-shadow: var(--shadow-md);
 }
 
-.mono {
-    font-family: Consolas, "Courier New", monospace;
-    word-break: break-all;
+.modal-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-@media (max-width: 1024px) {
-    .content-grid {
+.modal-body {
+    padding: 20px;
+}
+
+.modal-footer {
+    padding: 14px 20px;
+    border-top: 1px solid #eee;
+    text-align: right;
+}
+
+@media (max-width: 1180px) {
+    .cms-layout {
         grid-template-columns: 1fr;
     }
 }
+
+@media (max-width: 768px) {
+    .grid-2 {
+        grid-template-columns: 1fr;
+    }
+
+    .about-card {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
 {% endblock %}
 
 {% block content %}
-<div class="content-grid">
-    <div class="form-card">
-        <h3><i class="fas fa-file-lines" style="color: var(--gov-blue);"></i> Update Text Content</h3>
-        <form method="POST" action="{{ url_for('content.admin_update_content') }}">
-            <div class="form-row">
-                <label for="content-key">Content Key</label>
-                <input id="content-key" name="key" required placeholder="homepage_title">
-                <div class="helper">Use stable keys like <span class="mono">homepage_title</span>, <span class="mono">notice_text</span>, <span class="mono">homepage_description</span>.</div>
+<div class="cms-layout">
+    <div class="cms-left">
+        <section class="cms-card">
+            <div class="cms-card-header">
+                <h3><i class="fas fa-house" style="color: var(--gov-blue);"></i> Homepage Settings</h3>
+                <div class="status-inline" id="homepageStatus">Ready</div>
             </div>
-            <div class="form-row">
-                <label for="content-type">Type</label>
-                <select id="content-type" name="type">
-                    <option value="text">text</option>
-                    <option value="image">image</option>
-                </select>
+            <div class="cms-card-body">
+                <form id="homepageForm">
+                    <div class="field">
+                        <label for="homeTitle">Homepage Title</label>
+                        <input id="homeTitle" name="title" value="{{ homepage.title }}" required>
+                    </div>
+                    <div class="field">
+                        <label for="homeDescription">Homepage Description</label>
+                        <textarea id="homeDescription" name="description" required>{{ homepage.description }}</textarea>
+                    </div>
+                    <div class="field">
+                        <label for="noticeText">Notice Text</label>
+                        <input id="noticeText" name="notice_text" value="{{ homepage.notice_text }}" required>
+                    </div>
+
+                    <div class="grid-2">
+                        <div>
+                            <div class="field">
+                                <label for="heroImageValue">Hero Image Value (path or URL)</label>
+                                <input id="heroImageValue" name="hero_image" value="{{ homepage.hero_image_value or homepage.hero_image }}">
+                            </div>
+                            <div class="toolbar">
+                                <button type="button" class="btn-outline" id="uploadHeroBtn"><i class="fas fa-upload"></i> Upload Hero Image</button>
+                                <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Save Homepage</button>
+                            </div>
+                        </div>
+                        <div>
+                            <img id="heroImagePreview" class="preview-image" src="{{ homepage.hero_image or '' }}" alt="Hero preview">
+                        </div>
+                    </div>
+                </form>
             </div>
-            <div class="form-row">
-                <label for="content-value">Value</label>
-                <textarea id="content-value" name="value" required placeholder="Enter CMS content..."></textarea>
+        </section>
+
+        <section class="cms-card">
+            <div class="cms-card-header">
+                <h3><i class="fas fa-address-card" style="color: var(--saffron);"></i> About Us Management</h3>
+                <div class="toolbar">
+                    <button type="button" class="btn-outline" id="addAboutBtn"><i class="fas fa-plus"></i> Add New Item</button>
+                </div>
             </div>
-            <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Save Content</button>
+            <div class="cms-card-body">
+                <p class="status-inline" style="margin-bottom: 10px;">Drag cards to reorder. Changes save automatically after drop.</p>
+                <div id="aboutList" class="about-list"></div>
+            </div>
+        </section>
+    </div>
+
+    <div class="cms-right">
+        <section class="cms-card">
+            <div class="cms-card-header">
+                <h3><i class="fas fa-eye" style="color: var(--green);"></i> Live Preview</h3>
+                <button type="button" class="btn-outline" id="refreshPreviewBtn"><i class="fas fa-rotate"></i> Refresh</button>
+            </div>
+            <div class="cms-card-body">
+                <div class="preview-shell">
+                    <div class="preview-notice" id="previewNotice">{{ homepage.notice_text }}</div>
+                    <div class="preview-hero" id="previewHero" data-hero-image="{{ homepage.hero_image or '' }}">
+                        <div class="preview-overlay">
+                            <h3 id="previewTitle" style="font-size: 20px; margin-bottom: 6px;">{{ homepage.title }}</h3>
+                            <p id="previewDescription" style="font-size: 13px; margin: 0; opacity: 0.95;">{{ homepage.description }}</p>
+                        </div>
+                    </div>
+                    <div class="preview-about" id="previewAbout"></div>
+                </div>
+            </div>
+        </section>
+    </div>
+</div>
+
+<div class="modal-overlay" id="aboutModal">
+    <div class="modal-box">
+        <div class="modal-header">
+            <h3 id="aboutModalTitle">Add About Item</h3>
+            <button class="btn-outline" type="button" id="closeAboutModal">Close</button>
+        </div>
+        <form id="aboutForm">
+            <div class="modal-body">
+                <input type="hidden" id="aboutItemId">
+                <div class="field">
+                    <label for="aboutTitle">Title</label>
+                    <input id="aboutTitle" required>
+                </div>
+                <div class="field">
+                    <label for="aboutDescription">Description</label>
+                    <textarea id="aboutDescription" required></textarea>
+                </div>
+                <div class="grid-2">
+                    <div>
+                        <div class="field">
+                            <label for="aboutImageValue">Image Value (path or URL)</label>
+                            <input id="aboutImageValue">
+                        </div>
+                        <button type="button" class="btn-outline" id="uploadAboutImageBtn"><i class="fas fa-upload"></i> Upload Item Image</button>
+                    </div>
+                    <div>
+                        <img id="aboutImagePreview" class="preview-image" src="" alt="About preview">
+                    </div>
+                </div>
+                <div class="status-inline" id="aboutFormStatus"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" class="btn-primary"><i class="fas fa-save"></i> Save Item</button>
+            </div>
         </form>
     </div>
-
-    <div class="form-card">
-        <h3><i class="fas fa-image" style="color: var(--saffron);"></i> Upload Image</h3>
-        <div class="form-row">
-            <label for="image-key">Content Key</label>
-            <input id="image-key" placeholder="hero_image" value="hero_image">
-            <div class="helper">Uploaded URL can be automatically saved to this key.</div>
-        </div>
-        <div class="form-row">
-            <label for="image-file">Select Image</label>
-            <input id="image-file" type="file" accept="image/*">
-        </div>
-        <div class="preview-wrap" id="previewWrap">
-            <img id="uploadPreview" alt="Upload preview">
-        </div>
-        <div class="form-row" style="margin-top: 12px;">
-            <button type="button" class="btn-primary" id="uploadBtn"><i class="fas fa-upload"></i> Upload Image</button>
-        </div>
-        <div class="helper" id="uploadStatus"></div>
-        <div class="form-row" style="margin-top: 10px;">
-            <label for="uploaded-url">Uploaded URL</label>
-            <textarea id="uploaded-url" readonly placeholder="Image URL will appear here"></textarea>
-        </div>
-    </div>
 </div>
 
-<div class="table-card">
-    <div class="table-header">
-        <h3>Existing Content Keys ({{ content_rows | length }})</h3>
-    </div>
-
-    {% if content_rows %}
-    <table>
-        <thead>
-            <tr>
-                <th>Key</th>
-                <th>Type</th>
-                <th>Value</th>
-                <th>Updated</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for row in content_rows %}
-            <tr>
-                <td><span class="key-pill mono">{{ row.key }}</span></td>
-                <td>{{ row.type or 'text' }}</td>
-                <td class="truncate" title="{{ row.value }}">{{ row.value }}</td>
-                <td>{{ row.updated_at[:19] if row.updated_at else '' }}</td>
-                <td>
-                    <button
-                        class="action-btn"
-                        type="button"
-                        data-key="{{ row.key }}"
-                        data-type="{{ row.type or 'text' }}"
-                        data-value="{{ row.value }}"
-                        onclick="fillForm(this)"
-                    >
-                        <i class="fas fa-pen"></i> Edit
-                    </button>
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    {% else %}
-    <div class="empty-state">
-        <i class="fas fa-database"></i>
-        <p>No content keys saved yet.</p>
-    </div>
-    {% endif %}
-</div>
+<script id="cms-homepage-data" type="application/json">{{ homepage | tojson }}</script>
+<script id="cms-about-data" type="application/json">{{ about_items | tojson }}</script>
 {% endblock %}
 
 {% block scripts %}
 <script>
-    function fillForm(btn) {
-        document.getElementById('content-key').value = btn.dataset.key;
-        document.getElementById('content-type').value = btn.dataset.type || 'text';
-        document.getElementById('content-value').value = btn.dataset.value || '';
-        document.getElementById('content-value').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const cmsState = {
+        homepage: JSON.parse(document.getElementById('cms-homepage-data').textContent || '{}'),
+        aboutItems: JSON.parse(document.getElementById('cms-about-data').textContent || '[]')
+    };
+
+    const homepageStatus = document.getElementById('homepageStatus');
+    const homepageForm = document.getElementById('homepageForm');
+    const heroImageValue = document.getElementById('heroImageValue');
+    const heroImagePreview = document.getElementById('heroImagePreview');
+    const previewTitle = document.getElementById('previewTitle');
+    const previewDescription = document.getElementById('previewDescription');
+    const previewNotice = document.getElementById('previewNotice');
+    const previewHero = document.getElementById('previewHero');
+    const previewAbout = document.getElementById('previewAbout');
+    const aboutList = document.getElementById('aboutList');
+    const aboutModal = document.getElementById('aboutModal');
+    const aboutForm = document.getElementById('aboutForm');
+    const aboutModalTitle = document.getElementById('aboutModalTitle');
+    const aboutItemId = document.getElementById('aboutItemId');
+    const aboutTitle = document.getElementById('aboutTitle');
+    const aboutDescription = document.getElementById('aboutDescription');
+    const aboutImageValue = document.getElementById('aboutImageValue');
+    const aboutImagePreview = document.getElementById('aboutImagePreview');
+    const aboutFormStatus = document.getElementById('aboutFormStatus');
+
+    function setStatus(element, message, color) {
+        element.textContent = message;
+        element.style.color = color;
     }
 
-    const imageFileInput = document.getElementById('image-file');
-    const previewWrap = document.getElementById('previewWrap');
-    const uploadPreview = document.getElementById('uploadPreview');
-    const uploadBtn = document.getElementById('uploadBtn');
-    const uploadStatus = document.getElementById('uploadStatus');
-    const uploadedUrl = document.getElementById('uploaded-url');
+    function openAboutModal(item) {
+        if (item) {
+            aboutModalTitle.textContent = 'Edit About Item';
+            aboutItemId.value = item.id;
+            aboutTitle.value = item.title || '';
+            aboutDescription.value = item.description || '';
+            aboutImageValue.value = item.image_value || item.image_url || '';
+            aboutImagePreview.src = item.image_url || '';
+        } else {
+            aboutModalTitle.textContent = 'Add About Item';
+            aboutItemId.value = '';
+            aboutForm.reset();
+            aboutImagePreview.removeAttribute('src');
+        }
+        setStatus(aboutFormStatus, '', '#666');
+        aboutModal.classList.add('active');
+    }
 
-    imageFileInput.addEventListener('change', function () {
-        const file = this.files[0];
-        if (!file) {
-            previewWrap.classList.remove('show');
-            uploadPreview.removeAttribute('src');
+    function closeAboutModal() {
+        aboutModal.classList.remove('active');
+    }
+
+    function renderPreview() {
+        previewTitle.textContent = document.getElementById('homeTitle').value.trim();
+        previewDescription.textContent = document.getElementById('homeDescription').value.trim();
+        previewNotice.textContent = document.getElementById('noticeText').value.trim();
+        const hero = heroImageValue.value.trim();
+        previewHero.style.backgroundImage = hero ? `url('${heroImagePreview.src || hero}')` : 'none';
+        previewAbout.innerHTML = '';
+
+        cmsState.aboutItems.slice(0, 4).forEach((item) => {
+            const div = document.createElement('div');
+            div.className = 'preview-about-item';
+            div.innerHTML = `<strong>${item.title || ''}</strong><div>${(item.description || '').slice(0, 120)}</div>`;
+            previewAbout.appendChild(div);
+        });
+    }
+
+    function renderAboutList() {
+        if (!cmsState.aboutItems.length) {
+            aboutList.innerHTML = '<div class="empty-state"><i class="fas fa-layer-group"></i><p>No about items yet. Add your first item.</p></div>';
+            renderPreview();
             return;
         }
 
-        const reader = new FileReader();
-        reader.onload = function (event) {
-            uploadPreview.src = event.target.result;
-            previewWrap.classList.add('show');
-        };
-        reader.readAsDataURL(file);
-    });
+        aboutList.innerHTML = '';
+        cmsState.aboutItems.forEach((item) => {
+            const card = document.createElement('div');
+            card.className = 'about-card';
+            card.setAttribute('draggable', 'true');
+            card.dataset.id = item.id;
+            card.innerHTML = `
+                <img class="about-thumb" src="${item.image_url || ''}" alt="${item.title || 'About image'}">
+                <div>
+                    <div class="about-title"><i class="fas fa-grip-lines drag-handle"></i>${item.title || 'Untitled'}</div>
+                    <div class="about-desc">${item.description || ''}</div>
+                </div>
+                <div class="about-actions">
+                    <button class="btn-outline" type="button" data-action="edit">Edit</button>
+                    <button class="btn-danger" type="button" data-action="delete">Delete</button>
+                </div>
+            `;
 
-    uploadBtn.addEventListener('click', async function () {
-        const file = imageFileInput.files[0];
-        const key = document.getElementById('image-key').value.trim();
+            card.querySelector('[data-action="edit"]').addEventListener('click', () => openAboutModal(item));
+            card.querySelector('[data-action="delete"]').addEventListener('click', () => removeAboutItem(item.id));
+            addDragHandlers(card);
+            aboutList.appendChild(card);
+        });
 
-        if (!file) {
-            uploadStatus.textContent = 'Please choose an image before uploading.';
-            uploadStatus.style.color = '#721c24';
-            return;
-        }
+        renderPreview();
+    }
 
-        const formData = new FormData();
-        formData.append('image', file);
-        if (key) {
-            formData.append('key', key);
-        }
+    let dragItem = null;
 
-        uploadBtn.disabled = true;
-        uploadStatus.textContent = 'Uploading image...';
-        uploadStatus.style.color = '#004085';
+    function addDragHandlers(element) {
+        element.addEventListener('dragstart', () => {
+            dragItem = element;
+            element.classList.add('dragging');
+        });
 
-        try {
-            const response = await fetch('{{ url_for("content.admin_upload_image") }}', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'Accept': 'application/json'
+        element.addEventListener('dragend', () => {
+            element.classList.remove('dragging');
+            dragItem = null;
+            persistAboutOrder();
+        });
+
+        element.addEventListener('dragover', (event) => {
+            event.preventDefault();
+            const target = event.currentTarget;
+            if (dragItem && dragItem !== target) {
+                const rect = target.getBoundingClientRect();
+                const after = event.clientY > rect.top + rect.height / 2;
+                const parent = target.parentNode;
+                if (after) {
+                    parent.insertBefore(dragItem, target.nextSibling);
+                } else {
+                    parent.insertBefore(dragItem, target);
                 }
+            }
+        });
+    }
+
+    async function persistAboutOrder() {
+        const ids = Array.from(document.querySelectorAll('.about-card')).map((el) => Number(el.dataset.id));
+        try {
+            const response = await fetch('{{ url_for("content.admin_reorder_about") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify({ ids })
             });
             const result = await response.json();
-
             if (!response.ok || !result.success) {
-                throw new Error(result.error || 'Upload failed');
+                throw new Error(result.error || 'Reorder failed');
+            }
+            cmsState.aboutItems = result.data || [];
+            renderAboutList();
+        } catch (error) {
+            alert(error.message);
+        }
+    }
+
+    async function removeAboutItem(itemId) {
+        if (!confirm('Delete this about item?')) {
+            return;
+        }
+        try {
+            const response = await fetch(`{{ url_for("content.admin_delete_about_item", item_id=0) }}`.replace('/0', `/${itemId}`), {
+                method: 'POST',
+                headers: { 'Accept': 'application/json' }
+            });
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                throw new Error(result.error || 'Delete failed');
+            }
+            cmsState.aboutItems = cmsState.aboutItems.filter((item) => item.id !== itemId);
+            renderAboutList();
+        } catch (error) {
+            alert(error.message);
+        }
+    }
+
+    async function uploadImageFromPicker(targetInput, targetPreview, statusEl) {
+        const picker = document.createElement('input');
+        picker.type = 'file';
+        picker.accept = 'image/*';
+        picker.addEventListener('change', async () => {
+            const file = picker.files[0];
+            if (!file) {
+                return;
+            }
+            const formData = new FormData();
+            formData.append('image', file);
+            setStatus(statusEl, 'Uploading image...', '#004085');
+            try {
+                const response = await fetch('{{ url_for("content.admin_upload_image") }}', {
+                    method: 'POST',
+                    body: formData,
+                    headers: { 'Accept': 'application/json' }
+                });
+                const result = await response.json();
+                if (!response.ok || !result.success) {
+                    throw new Error(result.error || 'Upload failed');
+                }
+
+                targetInput.value = result.stored_value || result.url;
+                targetPreview.src = result.url;
+                setStatus(statusEl, 'Image uploaded successfully', '#155724');
+                renderPreview();
+            } catch (error) {
+                setStatus(statusEl, error.message, '#721c24');
+            }
+        });
+        picker.click();
+    }
+
+    homepageForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        setStatus(homepageStatus, 'Saving homepage...', '#004085');
+        const payload = {
+            title: document.getElementById('homeTitle').value.trim(),
+            description: document.getElementById('homeDescription').value.trim(),
+            notice_text: document.getElementById('noticeText').value.trim(),
+            hero_image: heroImageValue.value.trim(),
+        };
+
+        try {
+            const response = await fetch('{{ url_for("content.admin_update_homepage") }}', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                throw new Error(result.error || 'Failed to save homepage');
             }
 
-            uploadedUrl.value = result.url;
-            uploadStatus.textContent = result.private_bucket
-                ? 'Upload successful. Signed URL generated and storage path saved to CMS key.'
-                : 'Upload successful. Public URL is ready to use.';
-            uploadStatus.style.color = '#155724';
-            if (key) {
-                document.getElementById('content-key').value = key;
-                document.getElementById('content-type').value = 'image';
-                document.getElementById('content-value').value = result.stored_value || result.url;
+            cmsState.homepage = result.data;
+            if (cmsState.homepage.hero_image) {
+                heroImagePreview.src = cmsState.homepage.hero_image;
             }
+            setStatus(homepageStatus, 'Homepage saved', '#155724');
+            renderPreview();
         } catch (error) {
-            uploadStatus.textContent = error.message;
-            uploadStatus.style.color = '#721c24';
-        } finally {
-            uploadBtn.disabled = false;
+            setStatus(homepageStatus, error.message, '#721c24');
         }
     });
+
+    aboutForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const payload = {
+            title: aboutTitle.value.trim(),
+            description: aboutDescription.value.trim(),
+            image_url: aboutImageValue.value.trim(),
+        };
+        const existingId = aboutItemId.value;
+        const url = existingId
+            ? `{{ url_for("content.admin_update_about_item", item_id=0) }}`.replace('/0', `/${existingId}`)
+            : '{{ url_for("content.admin_add_about_item") }}';
+
+        setStatus(aboutFormStatus, 'Saving item...', '#004085');
+        try {
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                throw new Error(result.error || 'Failed to save item');
+            }
+
+            if (existingId) {
+                cmsState.aboutItems = cmsState.aboutItems.map((item) => item.id === Number(existingId) ? result.data : item);
+            } else {
+                cmsState.aboutItems.push(result.data);
+            }
+
+            cmsState.aboutItems.sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
+            renderAboutList();
+            setStatus(aboutFormStatus, 'Saved successfully', '#155724');
+            setTimeout(closeAboutModal, 300);
+        } catch (error) {
+            setStatus(aboutFormStatus, error.message, '#721c24');
+        }
+    });
+
+    heroImageValue.addEventListener('input', renderPreview);
+    document.getElementById('homeTitle').addEventListener('input', renderPreview);
+    document.getElementById('homeDescription').addEventListener('input', renderPreview);
+    document.getElementById('noticeText').addEventListener('input', renderPreview);
+    aboutImageValue.addEventListener('input', () => {
+        aboutImagePreview.src = aboutImageValue.value.trim();
+    });
+
+    document.getElementById('addAboutBtn').addEventListener('click', () => openAboutModal());
+    document.getElementById('closeAboutModal').addEventListener('click', closeAboutModal);
+    document.getElementById('refreshPreviewBtn').addEventListener('click', renderPreview);
+
+    document.getElementById('uploadHeroBtn').addEventListener('click', () => {
+        uploadImageFromPicker(heroImageValue, heroImagePreview, homepageStatus);
+    });
+
+    document.getElementById('uploadAboutImageBtn').addEventListener('click', () => {
+        uploadImageFromPicker(aboutImageValue, aboutImagePreview, aboutFormStatus);
+    });
+
+    aboutModal.addEventListener('click', (event) => {
+        if (event.target === aboutModal) {
+            closeAboutModal();
+        }
+    });
+
+    renderAboutList();
+    if (previewHero.dataset.heroImage && !heroImagePreview.getAttribute('src')) {
+        heroImagePreview.src = previewHero.dataset.heroImage;
+    }
+    renderPreview();
 </script>
 {% endblock %}

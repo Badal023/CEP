@@ -432,7 +432,9 @@
             .sidebar-nav a { justify-content: center; padding: 14px; }
             .main-content { margin-left: 60px; }
         }
+
     </style>
+    {% block extra_css %}{% endblock %}
 </head>
 <body>
     <!-- SIDEBAR -->
@@ -460,7 +462,7 @@
             <a href="{{ url_for('admin_payments') }}" class="{% if request.endpoint == 'admin_payments' %}active{% endif %}">
                 <i class="fas fa-indian-rupee-sign"></i> <span>Payments</span>
             </a>
-            <a href="{{ url_for('content.admin_content_page') }}" class="{% if request.endpoint == 'content.admin_content_page' %}active{% endif %}">
+            <a href="{{ url_for('content.admin_cms_dashboard') }}" class="{% if request.endpoint == 'content.admin_cms_dashboard' %}active{% endif %}">
                 <i class="fas fa-pen-ruler"></i> <span>Content Management</span>
             </a>
             <div class="section-label">Account</div>

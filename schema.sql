@@ -72,6 +72,28 @@ CREATE TABLE IF NOT EXISTS site_content (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 6. Structured homepage content
+CREATE TABLE IF NOT EXISTS homepage (
+    id BIGSERIAL PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT,
+    hero_image TEXT,
+    notice_text TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 7. Dynamic about section items
+CREATE TABLE IF NOT EXISTS about_items (
+    id BIGSERIAL PRIMARY KEY,
+    title TEXT NOT NULL,
+    description TEXT NOT NULL,
+    image_url TEXT,
+    order_index INT DEFAULT 1,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- =====================================================
 -- Row Level Security (RLS) Policies
 -- =====================================================
@@ -82,6 +104,8 @@ ALTER TABLE volunteers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
 ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE site_content ENABLE ROW LEVEL SECURITY;
+ALTER TABLE homepage ENABLE ROW LEVEL SECURITY;
+ALTER TABLE about_items ENABLE ROW LEVEL SECURITY;
 
 -- Allow inserts from the anon key (frontend submissions)
 CREATE POLICY "Allow anonymous inserts on contacts"
@@ -150,6 +174,33 @@ CREATE POLICY "Allow anon update on site_content"
 CREATE POLICY "Allow full access for service role on site_content"
     ON site_content FOR ALL TO service_role USING (true) WITH CHECK (true);
 
+CREATE POLICY "Allow anon select on homepage"
+    ON homepage FOR SELECT TO anon USING (true);
+
+CREATE POLICY "Allow anon insert on homepage"
+    ON homepage FOR INSERT TO anon WITH CHECK (true);
+
+CREATE POLICY "Allow anon update on homepage"
+    ON homepage FOR UPDATE TO anon USING (true) WITH CHECK (true);
+
+CREATE POLICY "Allow full access for service role on homepage"
+    ON homepage FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+CREATE POLICY "Allow anon select on about_items"
+    ON about_items FOR SELECT TO anon USING (true);
+
+CREATE POLICY "Allow anon insert on about_items"
+    ON about_items FOR INSERT TO anon WITH CHECK (true);
+
+CREATE POLICY "Allow anon update on about_items"
+    ON about_items FOR UPDATE TO anon USING (true) WITH CHECK (true);
+
+CREATE POLICY "Allow anon delete on about_items"
+    ON about_items FOR DELETE TO anon USING (true);
+
+CREATE POLICY "Allow full access for service role on about_items"
+    ON about_items FOR ALL TO service_role USING (true) WITH CHECK (true);
+
 -- =====================================================
 -- Updated_at trigger function
 -- =====================================================
@@ -175,4 +226,12 @@ CREATE TRIGGER payments_updated_at
 
 CREATE TRIGGER site_content_updated_at
     BEFORE UPDATE ON site_content
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER homepage_updated_at
+    BEFORE UPDATE ON homepage
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER about_items_updated_at
+    BEFORE UPDATE ON about_items
     FOR EACH ROW EXECUTE FUNCTION update_updated_at();

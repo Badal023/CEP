@@ -266,7 +266,9 @@ def admin_dashboard():
         contacts = supabase.table("contacts").select("id, status").execute()
         volunteers = supabase.table("volunteers").select("id, status").execute()
         payments = supabase.table("payments").select("id, status").execute()
-        content_rows = supabase.table("site_content").select("id").execute()
+        homepage_rows = supabase.table("homepage").select("id").limit(1).execute()
+        about_rows = supabase.table("about_items").select("id").execute()
+        cms_total = len(about_rows.data) + (1 if homepage_rows.data else 0)
 
         stats = {
             "contacts_total": len(contacts.data),
@@ -274,7 +276,7 @@ def admin_dashboard():
             "volunteers_total": len(volunteers.data),
             "volunteers_pending": len([v for v in volunteers.data if v["status"] == "pending"]),
             "payments_total": len(payments.data),
-            "content_total": len(content_rows.data),
+            "content_total": cms_total,
         }
     except Exception:
         stats = {

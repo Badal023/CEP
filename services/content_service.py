@@ -66,59 +66,194 @@ def create_signed_asset_url(storage_path):
     return _to_absolute_storage_url(_normalize_signed_url(signed))
 
 
-def get_content_map():
-    """Return site content as a key-value dictionary for frontend consumption."""
+def resolve_asset_url(value):
+    if not value:
+        return ""
+    if not Config.SUPABASE_STORAGE_PRIVATE_BUCKET:
+        return value
+    if value.startswith("http://") or value.startswith("https://"):
+        return value
+    try:
+        return create_signed_asset_url(value) or ""
+    except Exception:
+        return ""
+
+
+def _safe_text(value):
+    if value is None:
+        return ""
+    return str(value).strip()
+
+
+def get_legacy_content_map():
+    """Backward compatibility for old key-value endpoint."""
     _ensure_supabase()
     result = supabase.table("site_content").select("key, value, type").execute()
-
     content = {}
     for row in (result.data or []):
-        key = row["key"]
         value = row.get("value", "")
-        content_type = (row.get("type") or "text").strip().lower()
-
-        if content_type == "image" and value and Config.SUPABASE_STORAGE_PRIVATE_BUCKET:
-            if value.startswith("http://") or value.startswith("https://"):
-                content[key] = value
-            else:
-                try:
-                    content[key] = create_signed_asset_url(value) or ""
-                except Exception:
-                    content[key] = ""
-            continue
-
-        content[key] = value
-
+        if (row.get("type") or "").strip().lower() == "image":
+            value = resolve_asset_url(value)
+        content[row["key"]] = value
     return content
 
 
-def list_content_rows():
-    """Return full rows for admin listing."""
+def ensure_homepage_row():
     _ensure_supabase()
-    result = supabase.table("site_content").select("id, key, value, type, created_at, updated_at").order("key").execute()
-    return result.data or []
+    result = supabase.table("homepage").select("*").limit(1).execute()
+    if result.data:
+        return result.data[0]
+
+    inserted = supabase.table("homepage").insert({
+        "title": "Shiksha Sabke Liye",
+        "description": "Supporting quality education across rural communities.",
+        "hero_image": "",
+        "notice_text": "Applications open for Tribal Scholarship Scheme 2026",
+    }).execute()
+
+    if not inserted.data:
+        raise ContentServiceError("Failed to initialize homepage data")
+    return inserted.data[0]
 
 
-def upsert_content(key, value, content_type=None):
-    """Insert or update a content key using Supabase upsert."""
-    _ensure_supabase()
-
-    if not key or not key.strip():
-        raise ContentServiceError("'key' is required")
-
-    payload = {
-        "key": key.strip(),
-        "value": "" if value is None else str(value).strip(),
-        "updated_at": datetime.utcnow().isoformat()
+def get_homepage_content():
+    row = ensure_homepage_row()
+    return {
+        "id": row.get("id"),
+        "title": row.get("title", ""),
+        "description": row.get("description", ""),
+        "notice_text": row.get("notice_text", ""),
+        "hero_image": resolve_asset_url(row.get("hero_image", "")),
+        "hero_image_value": row.get("hero_image", ""),
     }
-    if content_type:
-        payload["type"] = content_type.strip()
 
-    result = supabase.table("site_content").upsert(payload, on_conflict="key").execute()
+
+def update_homepage_content(payload):
+    current = ensure_homepage_row()
+    home_id = current.get("id")
+    if not home_id:
+        raise ContentServiceError("Homepage row is missing")
+
+    update_payload = {
+        "title": _safe_text(payload.get("title")),
+        "description": _safe_text(payload.get("description")),
+        "notice_text": _safe_text(payload.get("notice_text")),
+        "hero_image": _safe_text(payload.get("hero_image")),
+        "updated_at": datetime.utcnow().isoformat(),
+    }
+
+    result = supabase.table("homepage").update(update_payload).eq("id", home_id).execute()
     if not result.data:
-        raise ContentServiceError("Failed to update content")
+        raise ContentServiceError("Failed to update homepage")
+    return get_homepage_content()
 
-    return result.data[0]
+
+def get_about_items():
+    _ensure_supabase()
+    result = supabase.table("about_items").select("id, title, description, image_url, order_index, created_at, updated_at").order("order_index").order("id").execute()
+    rows = result.data or []
+    normalized = []
+    for row in rows:
+        normalized.append({
+            "id": row.get("id"),
+            "title": row.get("title", ""),
+            "description": row.get("description", ""),
+            "image_url": resolve_asset_url(row.get("image_url", "")),
+            "image_value": row.get("image_url", ""),
+            "order_index": row.get("order_index", 0),
+            "created_at": row.get("created_at"),
+            "updated_at": row.get("updated_at"),
+        })
+    return normalized
+
+
+def _next_about_order_index():
+    result = supabase.table("about_items").select("order_index").order("order_index", desc=True).limit(1).execute()
+    rows = result.data or []
+    if not rows:
+        return 1
+    return int(rows[0].get("order_index") or 0) + 1
+
+
+def add_about_item(payload):
+    _ensure_supabase()
+    title = _safe_text(payload.get("title"))
+    description = _safe_text(payload.get("description"))
+    image_url = _safe_text(payload.get("image_url"))
+
+    if not title:
+        raise ContentServiceError("About item title is required")
+    if not description:
+        raise ContentServiceError("About item description is required")
+
+    insert_payload = {
+        "title": title,
+        "description": description,
+        "image_url": image_url,
+        "order_index": _next_about_order_index(),
+    }
+
+    result = supabase.table("about_items").insert(insert_payload).execute()
+    if not result.data:
+        raise ContentServiceError("Failed to add about item")
+    new_id = result.data[0].get("id")
+    items = get_about_items()
+    for item in items:
+        if item.get("id") == new_id:
+            return item
+    return items[-1] if items else None
+
+
+def update_about_item(item_id, payload):
+    _ensure_supabase()
+    title = _safe_text(payload.get("title"))
+    description = _safe_text(payload.get("description"))
+    image_url = _safe_text(payload.get("image_url"))
+
+    if not title:
+        raise ContentServiceError("About item title is required")
+    if not description:
+        raise ContentServiceError("About item description is required")
+
+    update_payload = {
+        "title": title,
+        "description": description,
+        "image_url": image_url,
+        "updated_at": datetime.utcnow().isoformat(),
+    }
+    result = supabase.table("about_items").update(update_payload).eq("id", item_id).execute()
+    if not result.data:
+        raise ContentServiceError("Failed to update about item")
+
+    items = get_about_items()
+    for item in items:
+        if str(item.get("id")) == str(item_id):
+            return item
+    return None
+
+
+def delete_about_item(item_id):
+    _ensure_supabase()
+    result = supabase.table("about_items").delete().eq("id", item_id).execute()
+    return bool(result.data)
+
+
+def reorder_about_items(ordered_ids):
+    _ensure_supabase()
+    if not isinstance(ordered_ids, list) or not ordered_ids:
+        raise ContentServiceError("ids array is required")
+
+    try:
+        normalized_ids = [int(item_id) for item_id in ordered_ids]
+    except (TypeError, ValueError):
+        raise ContentServiceError("ids must contain numeric item IDs")
+
+    for index, item_id in enumerate(normalized_ids, start=1):
+        supabase.table("about_items").update({
+            "order_index": index,
+            "updated_at": datetime.utcnow().isoformat(),
+        }).eq("id", item_id).execute()
+    return get_about_items()
 
 
 def _is_allowed_image(filename):
