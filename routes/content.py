@@ -2,10 +2,12 @@ from flask import Blueprint, jsonify, request, render_template, flash, redirect,
 
 from services.content_service import (
     ContentServiceError,
+    add_about_item_image,
     add_hero_slide,
     add_nav_link,
     add_notice,
     add_about_item,
+    delete_about_item_image,
     delete_hero_slide,
     delete_nav_link,
     delete_notice,
@@ -13,6 +15,7 @@ from services.content_service import (
     get_hero_slides,
     get_nav_links,
     get_notices,
+    get_about_item_images,
     get_about_items,
     get_homepage_content,
     get_legacy_content_map,
@@ -241,6 +244,40 @@ def create_content_blueprint(admin_required):
             return jsonify({"success": True, "message": "About item deleted"}), 200
         except Exception:
             return jsonify({"success": False, "error": "Failed to delete about item"}), 500
+
+    @content_bp.route("/admin/about-item-images/<int:item_id>", methods=["GET"])
+    @admin_required
+    def admin_get_about_item_images(item_id):
+        try:
+            images = get_about_item_images(item_id)
+            return jsonify({"success": True, "data": images}), 200
+        except ContentServiceError as exc:
+            return jsonify({"success": False, "error": str(exc)}), 400
+        except Exception:
+            return jsonify({"success": False, "error": "Failed to load about images"}), 500
+
+    @content_bp.route("/admin/add-about-item-image/<int:item_id>", methods=["POST"])
+    @admin_required
+    def admin_add_about_item_image(item_id):
+        payload = request.get_json(silent=True) if request.is_json else request.form
+        try:
+            image = add_about_item_image(item_id, payload)
+            return jsonify({"success": True, "message": "About image added", "data": image}), 200
+        except ContentServiceError as exc:
+            return jsonify({"success": False, "error": str(exc)}), 400
+        except Exception:
+            return jsonify({"success": False, "error": "Failed to add about image"}), 500
+
+    @content_bp.route("/admin/delete-about-item-image/<int:image_id>", methods=["POST"])
+    @admin_required
+    def admin_delete_about_item_image(image_id):
+        try:
+            deleted = delete_about_item_image(image_id)
+            if not deleted:
+                return jsonify({"success": False, "error": "Image not found"}), 404
+            return jsonify({"success": True, "message": "About image deleted"}), 200
+        except Exception:
+            return jsonify({"success": False, "error": "Failed to delete about image"}), 500
 
     @content_bp.route("/admin/reorder-about", methods=["POST"])
     @admin_required

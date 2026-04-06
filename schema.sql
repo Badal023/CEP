@@ -94,6 +94,17 @@ CREATE TABLE IF NOT EXISTS about_items (
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 7b. Multiple images for each about item
+CREATE TABLE IF NOT EXISTS about_item_images (
+    id BIGSERIAL PRIMARY KEY,
+    about_item_id BIGINT NOT NULL REFERENCES about_items(id) ON DELETE CASCADE,
+    image_url TEXT NOT NULL,
+    caption TEXT,
+    order_index INT DEFAULT 1,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- 8. Navigation links (multi-item)
 CREATE TABLE IF NOT EXISTS nav_links (
     id BIGSERIAL PRIMARY KEY,
@@ -137,6 +148,7 @@ ALTER TABLE admin_users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE site_content ENABLE ROW LEVEL SECURITY;
 ALTER TABLE homepage ENABLE ROW LEVEL SECURITY;
 ALTER TABLE about_items ENABLE ROW LEVEL SECURITY;
+ALTER TABLE about_item_images ENABLE ROW LEVEL SECURITY;
 ALTER TABLE nav_links ENABLE ROW LEVEL SECURITY;
 ALTER TABLE hero_slides ENABLE ROW LEVEL SECURITY;
 ALTER TABLE notices ENABLE ROW LEVEL SECURITY;
@@ -235,6 +247,21 @@ CREATE POLICY "Allow anon delete on about_items"
 CREATE POLICY "Allow full access for service role on about_items"
     ON about_items FOR ALL TO service_role USING (true) WITH CHECK (true);
 
+CREATE POLICY "Allow anon select on about_item_images"
+    ON about_item_images FOR SELECT TO anon USING (true);
+
+CREATE POLICY "Allow anon insert on about_item_images"
+    ON about_item_images FOR INSERT TO anon WITH CHECK (true);
+
+CREATE POLICY "Allow anon update on about_item_images"
+    ON about_item_images FOR UPDATE TO anon USING (true) WITH CHECK (true);
+
+CREATE POLICY "Allow anon delete on about_item_images"
+    ON about_item_images FOR DELETE TO anon USING (true);
+
+CREATE POLICY "Allow full access for service role on about_item_images"
+    ON about_item_images FOR ALL TO service_role USING (true) WITH CHECK (true);
+
 CREATE POLICY "Allow anon select on nav_links"
     ON nav_links FOR SELECT TO anon USING (true);
 
@@ -304,6 +331,10 @@ CREATE TRIGGER homepage_updated_at
 
 CREATE TRIGGER about_items_updated_at
     BEFORE UPDATE ON about_items
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER about_item_images_updated_at
+    BEFORE UPDATE ON about_item_images
     FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
 CREATE TRIGGER nav_links_updated_at

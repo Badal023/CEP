@@ -196,6 +196,30 @@
     white-space: nowrap;
 }
 
+.about-gallery-list {
+    display: grid;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.about-gallery-item {
+    display: grid;
+    grid-template-columns: 56px 1fr auto;
+    gap: 10px;
+    align-items: center;
+    border: 1px solid #e8e8e8;
+    border-radius: 8px;
+    padding: 8px;
+}
+
+.about-gallery-thumb {
+    width: 56px;
+    height: 56px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+}
+
 .drag-handle {
     cursor: grab;
     color: var(--text-gray);
@@ -476,6 +500,18 @@
                         <img id="aboutImagePreview" class="preview-image" src="" alt="About preview">
                     </div>
                 </div>
+                <div class="field" style="margin-top: 12px;">
+                    <label>Multiple Images Gallery</label>
+                    <div class="grid-2">
+                        <input id="aboutGalleryImageValue" placeholder="Image path or URL">
+                        <input id="aboutGalleryImageCaption" placeholder="Optional caption">
+                    </div>
+                    <div class="toolbar" style="margin-top: 8px;">
+                        <button type="button" class="btn-outline" id="uploadAboutGalleryImageBtn"><i class="fas fa-upload"></i> Upload Gallery Image</button>
+                        <button type="button" class="btn-primary" id="addAboutGalleryImageBtn"><i class="fas fa-plus"></i> Add Image</button>
+                    </div>
+                    <div class="about-gallery-list" id="aboutGalleryList"></div>
+                </div>
                 <div class="status-inline" id="aboutFormStatus"></div>
             </div>
             <div class="modal-footer">
@@ -521,6 +557,9 @@
     const aboutImageValue = document.getElementById('aboutImageValue');
     const aboutImagePreview = document.getElementById('aboutImagePreview');
     const aboutFormStatus = document.getElementById('aboutFormStatus');
+    const aboutGalleryImageValue = document.getElementById('aboutGalleryImageValue');
+    const aboutGalleryImageCaption = document.getElementById('aboutGalleryImageCaption');
+    const aboutGalleryList = document.getElementById('aboutGalleryList');
     const navLabel = document.getElementById('navLabel');
     const navHref = document.getElementById('navHref');
     const addNavLinkBtn = document.getElementById('addNavLinkBtn');
@@ -538,6 +577,7 @@
     const addSlideBtn = document.getElementById('addSlideBtn');
     const heroSlidesList = document.getElementById('heroSlidesList');
     const heroSlideStatus = document.getElementById('heroSlideStatus');
+    let currentAboutImages = [];
 
     function escapeHtml(value) {
         return String(value || '')
@@ -561,12 +601,17 @@
             aboutDescription.value = item.description || '';
             aboutImageValue.value = item.image_value || item.image_url || '';
             aboutImagePreview.src = item.image_url || '';
+            currentAboutImages = Array.isArray(item.images) ? [...item.images] : [];
         } else {
             aboutModalTitle.textContent = 'Add About Item';
             aboutItemId.value = '';
             aboutForm.reset();
             aboutImagePreview.removeAttribute('src');
+            currentAboutImages = [];
         }
+        aboutGalleryImageValue.value = '';
+        aboutGalleryImageCaption.value = '';
+        renderAboutGalleryList();
         setStatus(aboutFormStatus, '', '#666');
         aboutModal.classList.add('active');
     }
@@ -609,6 +654,7 @@
                 <div>
                     <div class="about-title"><i class="fas fa-grip-lines drag-handle"></i>${item.title || 'Untitled'}</div>
                     <div class="about-desc">${item.description || ''}</div>
+                    <div class="status-inline">Gallery images: ${Array.isArray(item.images) ? item.images.length : 0}</div>
                 </div>
                 <div class="about-actions">
                     <button class="btn-outline" type="button" data-action="edit">Edit</button>
@@ -623,6 +669,35 @@
         });
 
         renderPreview();
+    }
+
+    function renderAboutGalleryList() {
+        const itemId = Number(aboutItemId.value);
+        if (!itemId) {
+            aboutGalleryList.innerHTML = '<div class="status-inline">Save the about item first, then add multiple images.</div>';
+            return;
+        }
+
+        if (!currentAboutImages.length) {
+            aboutGalleryList.innerHTML = '<div class="status-inline">No gallery images yet for this item.</div>';
+            return;
+        }
+
+        aboutGalleryList.innerHTML = '';
+        currentAboutImages.forEach((image) => {
+            const row = document.createElement('div');
+            row.className = 'about-gallery-item';
+            row.innerHTML = `
+                <img class="about-gallery-thumb" src="${image.image_url || ''}" alt="About image">
+                <div>
+                    <div class="simple-item-title">${escapeHtml(image.caption || 'No caption')}</div>
+                    <div class="simple-item-sub">${escapeHtml(image.image_value || image.image_url || '')}</div>
+                </div>
+                <button class="btn-danger" type="button">Delete</button>
+            `;
+            row.querySelector('button').addEventListener('click', () => removeAboutGalleryImage(image.id));
+            aboutGalleryList.appendChild(row);
+        });
     }
 
     function renderNavLinksList() {
@@ -754,6 +829,91 @@
             renderAboutList();
         } catch (error) {
             alert(error.message);
+        }
+    }
+
+    async function addAboutGalleryImage() {
+        const itemId = Number(aboutItemId.value);
+        if (!itemId) {
+            setStatus(aboutFormStatus, 'Save item first before adding gallery images', '#721c24');
+            return;
+        }
+
+        const payload = {
+            image_url: aboutGalleryImageValue.value.trim(),
+            caption: aboutGalleryImageCaption.value.trim(),
+        };
+
+        if (!payload.image_url) {
+            setStatus(aboutFormStatus, 'Image value is required', '#721c24');
+            return;
+        }
+
+        setStatus(aboutFormStatus, 'Adding gallery image...', '#004085');
+        try {
+            const response = await fetch(`{{ url_for("content.admin_add_about_item_image", item_id=0) }}`.replace('/0', `/${itemId}`), {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                throw new Error(result.error || 'Failed to add image');
+            }
+
+            currentAboutImages.push(result.data);
+            currentAboutImages.sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
+            aboutGalleryImageValue.value = '';
+            aboutGalleryImageCaption.value = '';
+            setStatus(aboutFormStatus, 'Gallery image added', '#155724');
+            renderAboutGalleryList();
+
+            cmsState.aboutItems = cmsState.aboutItems.map((item) => {
+                if (item.id !== itemId) {
+                    return item;
+                }
+                return {
+                    ...item,
+                    images: [...currentAboutImages],
+                };
+            });
+            renderAboutList();
+        } catch (error) {
+            setStatus(aboutFormStatus, error.message, '#721c24');
+        }
+    }
+
+    async function removeAboutGalleryImage(imageId) {
+        if (!confirm('Delete this gallery image?')) {
+            return;
+        }
+        try {
+            const response = await fetch(`{{ url_for("content.admin_delete_about_item_image", image_id=0) }}`.replace('/0', `/${imageId}`), {
+                method: 'POST',
+                headers: { 'Accept': 'application/json' }
+            });
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                throw new Error(result.error || 'Delete failed');
+            }
+
+            currentAboutImages = currentAboutImages.filter((img) => img.id !== imageId);
+            renderAboutGalleryList();
+            setStatus(aboutFormStatus, 'Gallery image deleted', '#155724');
+
+            const itemId = Number(aboutItemId.value);
+            cmsState.aboutItems = cmsState.aboutItems.map((item) => {
+                if (item.id !== itemId) {
+                    return item;
+                }
+                return {
+                    ...item,
+                    images: [...currentAboutImages],
+                };
+            });
+            renderAboutList();
+        } catch (error) {
+            setStatus(aboutFormStatus, error.message, '#721c24');
         }
     }
 
@@ -909,14 +1069,17 @@
 
             if (existingId) {
                 cmsState.aboutItems = cmsState.aboutItems.map((item) => item.id === Number(existingId) ? result.data : item);
+                currentAboutImages = Array.isArray(result.data.images) ? [...result.data.images] : currentAboutImages;
             } else {
                 cmsState.aboutItems.push(result.data);
+                aboutItemId.value = result.data.id;
+                currentAboutImages = Array.isArray(result.data.images) ? [...result.data.images] : [];
             }
 
             cmsState.aboutItems.sort((a, b) => (a.order_index || 0) - (b.order_index || 0));
             renderAboutList();
+            renderAboutGalleryList();
             setStatus(aboutFormStatus, 'Saved successfully', '#155724');
-            setTimeout(closeAboutModal, 300);
         } catch (error) {
             setStatus(aboutFormStatus, error.message, '#721c24');
         }
@@ -1025,6 +1188,12 @@
     document.getElementById('uploadAboutImageBtn').addEventListener('click', () => {
         uploadImageFromPicker(aboutImageValue, aboutImagePreview, aboutFormStatus);
     });
+
+    document.getElementById('uploadAboutGalleryImageBtn').addEventListener('click', () => {
+        uploadImageFromPicker(aboutGalleryImageValue, aboutImagePreview, aboutFormStatus);
+    });
+
+    document.getElementById('addAboutGalleryImageBtn').addEventListener('click', addAboutGalleryImage);
 
     document.getElementById('uploadSlideBtn').addEventListener('click', () => {
         uploadImageFromPicker(slideImageValue, slideImagePreview, heroSlideStatus);

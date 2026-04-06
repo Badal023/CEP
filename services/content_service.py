@@ -152,14 +152,37 @@ def get_about_items():
     _ensure_supabase()
     result = supabase.table("about_items").select("id, title, description, image_url, order_index, created_at, updated_at").order("order_index").order("id").execute()
     rows = result.data or []
+
+    image_result = supabase.table("about_item_images").select("id, about_item_id, image_url, caption, order_index").order("order_index").order("id").execute()
+    image_rows = image_result.data or []
+    images_by_item = {}
+    for image_row in image_rows:
+        about_item_id = image_row.get("about_item_id")
+        if not about_item_id:
+            continue
+        images_by_item.setdefault(about_item_id, []).append({
+            "id": image_row.get("id"),
+            "about_item_id": about_item_id,
+            "image_url": resolve_asset_url(image_row.get("image_url", "")),
+            "image_value": image_row.get("image_url", ""),
+            "caption": image_row.get("caption", ""),
+            "order_index": image_row.get("order_index", 0),
+        })
+
     normalized = []
     for row in rows:
+        item_id = row.get("id")
+        item_images = images_by_item.get(item_id, [])
+        cover_value = row.get("image_url", "")
+        if not cover_value and item_images:
+            cover_value = item_images[0].get("image_value", "")
         normalized.append({
-            "id": row.get("id"),
+            "id": item_id,
             "title": row.get("title", ""),
             "description": row.get("description", ""),
-            "image_url": resolve_asset_url(row.get("image_url", "")),
-            "image_value": row.get("image_url", ""),
+            "image_url": resolve_asset_url(cover_value),
+            "image_value": cover_value,
+            "images": item_images,
             "order_index": row.get("order_index", 0),
             "created_at": row.get("created_at"),
             "updated_at": row.get("updated_at"),
@@ -234,7 +257,63 @@ def update_about_item(item_id, payload):
 
 def delete_about_item(item_id):
     _ensure_supabase()
+    supabase.table("about_item_images").delete().eq("about_item_id", item_id).execute()
     result = supabase.table("about_items").delete().eq("id", item_id).execute()
+    return bool(result.data)
+
+
+def get_about_item_images(item_id):
+    _ensure_supabase()
+    result = supabase.table("about_item_images").select("id, about_item_id, image_url, caption, order_index, created_at, updated_at").eq("about_item_id", item_id).order("order_index").order("id").execute()
+    rows = result.data or []
+    normalized = []
+    for row in rows:
+        normalized.append({
+            "id": row.get("id"),
+            "about_item_id": row.get("about_item_id"),
+            "image_url": resolve_asset_url(row.get("image_url", "")),
+            "image_value": row.get("image_url", ""),
+            "caption": row.get("caption", ""),
+            "order_index": row.get("order_index", 0),
+            "created_at": row.get("created_at"),
+            "updated_at": row.get("updated_at"),
+        })
+    return normalized
+
+
+def add_about_item_image(item_id, payload):
+    _ensure_supabase()
+    image_url = _safe_text(payload.get("image_url"))
+    caption = _safe_text(payload.get("caption"))
+
+    if not image_url:
+        raise ContentServiceError("image_url is required")
+
+    about_item_result = supabase.table("about_items").select("id").eq("id", item_id).limit(1).execute()
+    if not about_item_result.data:
+        raise ContentServiceError("About item not found")
+
+    index_result = supabase.table("about_item_images").select("order_index").eq("about_item_id", item_id).order("order_index", desc=True).limit(1).execute()
+    index_rows = index_result.data or []
+    next_index = int(index_rows[0].get("order_index") or 0) + 1 if index_rows else 1
+    result = supabase.table("about_item_images").insert({
+        "about_item_id": item_id,
+        "image_url": image_url,
+        "caption": caption,
+        "order_index": next_index,
+    }).execute()
+    if not result.data:
+        raise ContentServiceError("Failed to add about image")
+    new_id = result.data[0].get("id")
+    for image in get_about_item_images(item_id):
+        if image.get("id") == new_id:
+            return image
+    return None
+
+
+def delete_about_item_image(image_id):
+    _ensure_supabase()
+    result = supabase.table("about_item_images").delete().eq("id", image_id).execute()
     return bool(result.data)
 
 
