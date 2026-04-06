@@ -58,6 +58,39 @@ def seed_admin():
         print(f"[SEED] Could not seed admin (run schema.sql first): {e}")
 
 
+def ensure_default_admin_user():
+    """Ensure default admin user exists and return it when possible."""
+    if not supabase:
+        return None
+
+    default_email = (Config.ADMIN_DEFAULT_EMAIL or "").strip().lower()
+    if not default_email:
+        return None
+
+    try:
+        existing = supabase.table("admin_users").select("*").eq("email", default_email).limit(1).execute()
+        if existing.data:
+            return existing.data[0]
+
+        inserted = supabase.table("admin_users").insert({
+            "name": "Admin",
+            "email": default_email,
+            "password_hash": generate_password_hash(Config.ADMIN_DEFAULT_PASSWORD),
+            "role": "superadmin"
+        }).execute()
+        if inserted.data:
+            print(f"[SEED] Default admin created on-demand: {default_email}")
+            return inserted.data[0]
+    except Exception as e:
+        print(f"[SEED] ensure_default_admin_user failed: {e}")
+
+    return None
+
+
+# Seed at import time so production app servers also initialize admin.
+seed_admin()
+
+
 # =====================================================
 # FRONTEND ROUTES
 # =====================================================
@@ -160,27 +193,56 @@ def api_volunteer():
 def admin_login():
     """Admin login page."""
     if request.method == "POST":
-        email = request.form.get("email", "").strip()
+        email = request.form.get("email", "").strip().lower()
         password = request.form.get("password", "")
+        user = None
+
+        if not email or not password:
+            flash("Email and password are required", "error")
+            return render_template("admin/login.html")
 
         try:
-            result = supabase.table("admin_users").select("*").eq("email", email).execute()
-            if result.data:
-                user = result.data[0]
-                if check_password_hash(user["password_hash"], password):
-                    session["admin_logged_in"] = True
-                    session["admin_id"] = user["id"]
-                    session["admin_name"] = user["name"]
-                    session["admin_email"] = user["email"]
-                    session["admin_role"] = user["role"]
-                    # Update last login
-                    supabase.table("admin_users").update(
-                        {"last_login": datetime.utcnow().isoformat()}
-                    ).eq("id", user["id"]).execute()
-                    return redirect(url_for("admin_dashboard"))
+            if supabase:
+                result = supabase.table("admin_users").select("*").eq("email", email).limit(1).execute()
+                if result.data:
+                    user = result.data[0]
+
+            if user and check_password_hash(user.get("password_hash", ""), password):
+                session["admin_logged_in"] = True
+                session["admin_id"] = user.get("id")
+                session["admin_name"] = user.get("name", "Admin")
+                session["admin_email"] = user.get("email", email)
+                session["admin_role"] = user.get("role", "admin")
+
+                try:
+                    if supabase and user.get("id"):
+                        supabase.table("admin_users").update(
+                            {"last_login": datetime.utcnow().isoformat()}
+                        ).eq("id", user["id"]).execute()
+                except Exception:
+                    pass
+
+                return redirect(url_for("admin_dashboard"))
+
+            # Fallback for env default credentials when DB row is missing/inconsistent.
+            if email == (Config.ADMIN_DEFAULT_EMAIL or "").strip().lower() and password == Config.ADMIN_DEFAULT_PASSWORD:
+                default_user = ensure_default_admin_user() or {
+                    "id": None,
+                    "name": "Admin",
+                    "email": email,
+                    "role": "superadmin",
+                }
+                session["admin_logged_in"] = True
+                session["admin_id"] = default_user.get("id")
+                session["admin_name"] = default_user.get("name", "Admin")
+                session["admin_email"] = default_user.get("email", email)
+                session["admin_role"] = default_user.get("role", "superadmin")
+                return redirect(url_for("admin_dashboard"))
+
             flash("Invalid email or password", "error")
         except Exception as e:
-            flash(f"Login error: {e}", "error")
+            flash("Login failed. Please check database setup and try again.", "error")
+            print(f"[LOGIN] Login error: {e}")
 
     return render_template("admin/login.html")
 
